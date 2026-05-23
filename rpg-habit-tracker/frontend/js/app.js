@@ -35,8 +35,48 @@ function initNavigation() {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`page-${page}`)?.classList.add('active');
             window.scrollTo(0, 0);
+
+            // Обновляем данные при переходе на вкладку, чтобы подтянуть свежие изменения
+            // (например, задачи ивента, который только что стал активным).
+            onPageShown(page);
         });
     });
+}
+
+// Перезагрузка данных конкретной страницы при её открытии.
+// Главное здесь — Квесты: туда подмешиваются задачи активных ивентов,
+// а статус ивента мог измениться (upcoming → active) уже после первой загрузки.
+async function onPageShown(page) {
+    try {
+        switch (page) {
+            case 'daily':
+                await loadCharacter();
+                await loadTasks();
+                break;
+            case 'challenges':
+                await loadChallenges();
+                break;
+            case 'feed':
+                await loadFeed();
+                await loadFriendRequests();
+                await loadFriends();
+                break;
+            case 'profile':
+                await loadProfile();
+                break;
+            case 'shop':
+                await loadShop();
+                break;
+            case 'habits':
+                await loadHabits();
+                break;
+            case 'goals':
+                await loadGoals();
+                break;
+        }
+    } catch (e) {
+        console.error('onPageShown error:', e);
+    }
 }
 
 document.getElementById('logout-btn').addEventListener('click', () => {

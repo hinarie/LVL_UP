@@ -211,6 +211,15 @@
     display: inline-block;
 }
 
+/* Пока в таймере нет текста (карточка ещё не получила обратный отсчёт) —
+   не показываем пустую серую плашку. Как только startVisualTimer впишет
+   текст, :empty перестаёт срабатывать и плашка появляется. */
+.task-timer:empty {
+    display: none !important;
+    padding: 0;
+    margin: 0;
+}
+
 .task-actions { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; flex-shrink: 0; }
 
 .btn-start, .btn-complete, .btn-undone {

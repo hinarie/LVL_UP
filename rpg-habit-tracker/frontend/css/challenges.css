@@ -917,7 +917,14 @@
     flex: 1;
 }
 
-.lp-comment-author { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+.lp-comment-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+.lp-comment-author { font-size: 11px; font-weight: 600; }
+.lp-comment-time   { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
 .lp-comment-text   { font-size: 12px; line-height: 1.4; color: var(--text-primary); }
 
 .lp-comment-form {
@@ -1479,23 +1486,91 @@
     background: rgba(124,58,237,0.05);
 }
 
-/* ── Мобилка: правильный порядок секций ────────────────────── */
+/* ── Мобилка: список сверху, детали ивента снизу ───────────── */
 @media (max-width: 900px) {
-    /* 1. Живая панель (order -1 уже есть) */
-    .ch-live-panel { order: -1; }
+    /* Список ивентов идёт первым — пользователь видит каталог, тапает карточку,
+       и JS плавно подкручивает к деталям (живой панели) ниже. */
+    .ch-list-col   { order: 0; }
+    .ch-live-panel { order: 1; }
 
-    /* 2. "Участвую" */
-    #ch-section-joined { order: 0; }
-
-    /* 3. "Открытые ивенты" */
-    #ch-section-public { order: 1; }
-
-    /* 4. Архив (завершённые) */
+    /* Порядок секций внутри списка */
+    #ch-section-joined  { order: 0; }
+    #ch-section-public  { order: 1; }
     #ch-archive-section { order: 2; }
 
     .ch-list-col {
-        order: 1;
         display: flex;
         flex-direction: column;
     }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   МОБИЛКА — финальная полировка ивентов (консолидировано)
+   Один блок, чтобы не плодить разрозненные правила.
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+    /* Живая панель как «экран деталей»: чуть отделяем от списка */
+    .ch-live-panel {
+        scroll-margin-top: calc(var(--header-h, 56px) + 8px);
+    }
+
+    /* Активная карточка — заметная подсветка + подсказка, что детали ниже */
+    .challenge-card.active {
+        box-shadow: 0 0 0 1px var(--accent-purple), 0 6px 18px rgba(124,58,237,0.18);
+    }
+    .challenge-card.active::after {
+        content: "Детали ниже ↓";
+        display: block;
+        margin-top: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent-purple-bright);
+        text-align: center;
+    }
+
+    /* Тач-цели: основные кнопки действий не ниже ~44px */
+    .btn-card-join,
+    .btn-live-join,
+    .btn-task-start,
+    .btn-hold,
+    .btn-finish-event,
+    .btn-post-submit {
+        min-height: 44px;
+    }
+
+    /* Поле комментария и кнопка отправки — удобнее тапать */
+    .lp-comment-input { min-height: 40px; }
+    .btn-comment-send { min-width: 40px; min-height: 40px; }
+
+    /* Реакции крупнее под палец */
+    .lp-reaction { padding: 6px 10px; font-size: 15px; }
+}
+
+@media (max-width: 500px) {
+    /* Заголовок страницы: эмодзи + название компактнее */
+    .ch-page-title h2 { font-size: 18px; }
+
+    /* Карточка ивента: чуть плотнее, но читаемо */
+    .challenge-card { padding: 12px; }
+
+    /* Шапка живой панели не прижимается к краям */
+    .ch-live-title { font-size: 16px; }
+
+    /* Билдер задач в модалке — опции в одну колонку на самых узких */
+    .ch-task-row-opts { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Модалка создания ивента использует .modal-panel (а не .modal),
+      поэтому мобильный bottom-sheet из components.css её не покрывал.
+      Дублируем нужные правила для .modal-panel здесь. ───────────── */
+@media (max-width: 768px) {
+    .modal-panel {
+        width: 100%;
+        max-width: 100%;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        max-height: 90dvh;
+        overflow-y: auto;
+    }
+    /* .modal-overlay уже получает align-items:flex-end из components.css,
+       так что панель прижимается к низу экрана как нативный шит. */
 }

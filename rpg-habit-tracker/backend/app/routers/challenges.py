@@ -381,6 +381,19 @@ async def create_challenge(
     starts_at = data.starts_at.replace(tzinfo=None)
     ends_at   = data.ends_at.replace(tzinfo=None)
 
+    # Если старт уже наступил — сразу делаем ивент активным, иначе он останется
+    # upcoming до ближайшего admin/tick (раз в 60 сек), и его задачи не появятся
+    # в Квестах. Если старт в будущем — оставляем upcoming, tick активирует позже.
+    # Небольшой буфер (2 мин) сглаживает задержку между открытием формы и отправкой
+    # и рассинхрон часов клиента/сервера, чтобы «старт сейчас» надёжно активировал ивент.
+    from datetime import timedelta
+    now = datetime.utcnow()
+    initial_status = (
+        ChallengeStatus.active
+        if starts_at <= now + timedelta(minutes=2)
+        else ChallengeStatus.upcoming
+    )
+
     challenge = Challenge(
         id=uuid.uuid4(),
         creator_id=current_user.id,
@@ -388,7 +401,7 @@ async def create_challenge(
         description=data.description,
         banner_emoji=data.banner_emoji,
         challenge_type=data.challenge_type,
-        status=ChallengeStatus.upcoming,
+        status=initial_status,
         required_rank=data.required_rank,
         initial_stake_credits=data.initial_stake_credits,
         entry_fee_credits=entry_fee,
@@ -882,6 +895,10 @@ async def finish_challenge(
             cross_posted=True,
         )
         db.add(auto)
+        # TODO (раздел «Лента»): здесь cross_posted=True, но в глобальную social.Post
+        # запись НЕ создаётся (в отличие от create_post). Из-за этого авто-пост победителя
+        # помечен как кросс-постнутый, но в глобальной ленте его нет. При доработке Ленты
+        # нужно либо создавать здесь social.Post и проставлять cross_post_id, либо снять флаг.
 
     await db.commit()
     return {"message": "Ивент завершён! Призы выданы.", "results": results}

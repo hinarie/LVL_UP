@@ -126,7 +126,7 @@ function makeCatalogCard(ch) {
     card.className = `challenge-card status-${ch.status}`;
     card.dataset.challengeId = ch.id;
     if (ch.joined) card.dataset.joined = '1';
-    card.onclick = () => openLivePanel(ch.id);
+    card.onclick = () => openLivePanel(ch.id, true);
 
     // Прогресс (для активных)
     let progressHtml = '';
@@ -190,7 +190,7 @@ function makeCatalogCard(ch) {
 // Живая панель
 // ──────────────────────────────────────────────────────────────
 
-async function openLivePanel(challengeId) {
+async function openLivePanel(challengeId, userInitiated = false) {
     // Подсвечиваем карточку по data-challenge-id
     document.querySelectorAll('.challenge-card').forEach(c => c.classList.remove('active'));
     const targetCard = document.querySelector(`.challenge-card[data-challenge-id="${challengeId}"]`);
@@ -208,6 +208,18 @@ async function openLivePanel(challengeId) {
         document.querySelectorAll('.ch-live-panel-content').forEach(p => p.classList.remove('active'));
         document.getElementById('lp-tab-tasks')?.classList.add('active');
         activeLiveTab = 'tasks';
+
+        // На узких экранах список и панель идут в одну колонку. Когда пользователь
+        // сам тапнул карточку — плавно подкручиваем к деталям ивента, чтобы не
+        // пришлось скроллить вручную. На автооткрытии при загрузке не дёргаем.
+        if (userInitiated && window.matchMedia('(max-width: 900px)').matches) {
+            const panel = document.getElementById('ch-live-panel');
+            if (panel) {
+                requestAnimationFrame(() =>
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                );
+            }
+        }
     } catch (e) {
         showToast('Не удалось загрузить ивент', true);
     }
@@ -446,7 +458,8 @@ async function chCompleteTask(taskId, completionId) {
         const res = await api.request('POST', `/challenges/${currentChallenge.challenge.id}/tasks/${taskId}/complete`, null, true);
         clearInterval(taskTimers[taskId]);
         showToast(res.message);
-        showXpFloat(res.xp_result?.xp_awarded || 0);
+        // award_xp возвращает поле xp_gained (не xp_awarded) — иначе анимация не покажется
+        showXpFloat(res.xp_result?.xp_gained ?? res.xp_result?.xp_awarded ?? 0);
         await refreshLivePanel(currentChallenge.challenge.id);
         await loadCharacter();
         await loadChallenges();
@@ -466,6 +479,10 @@ async function joinChallenge(challengeId) {
         showToast(`${res.message} 🏆 Фонд: ${res.prize_pool} ₡`);
         await loadChallenges();
         await loadCharacter();
+        // Если ивент уже активен — его задачи должны сразу появиться в Квестах.
+        if (typeof loadTasks === 'function') {
+            await loadTasks();
+        }
         await refreshLivePanel(challengeId);
     } catch (e) { showToast(e.message, true); }
 }
@@ -554,7 +571,10 @@ function makeChallengePostCard(post) {
         <div class="lp-comment">
             <div class="lp-comment-avatar">${(c.author_name || '?')[0].toUpperCase()}</div>
             <div class="lp-comment-body">
-                <div class="lp-comment-author">${c.author_name || 'Герой'}</div>
+                <div class="lp-comment-head">
+                    <span class="lp-comment-author">${c.author_name || 'Герой'}</span>
+                    ${c.created_at ? `<span class="lp-comment-time">${fmtRelTime(c.created_at)}</span>` : ''}
+                </div>
                 <div class="lp-comment-text">${chEscapeHtml(c.content)}</div>
             </div>
         </div>`).join('');
@@ -644,7 +664,10 @@ async function sendComment(postId) {
         commentEl.innerHTML = `
             <div class="lp-comment-avatar">${(res.author_name || '?')[0].toUpperCase()}</div>
             <div class="lp-comment-body">
-                <div class="lp-comment-author">${res.author_name || 'Герой'}</div>
+                <div class="lp-comment-head">
+                    <span class="lp-comment-author">${res.author_name || 'Герой'}</span>
+                    <span class="lp-comment-time">${fmtRelTime(res.created_at || new Date().toISOString())}</span>
+                </div>
                 <div class="lp-comment-text">${chEscapeHtml(res.content)}</div>
             </div>`;
         const listEl = document.getElementById(`lp-comments-list-${postId}`);
@@ -686,6 +709,11 @@ async function tickStatuses() {
     try {
         await api.request('POST', '/challenges/admin/tick', null, true);
         await loadChallenges();
+        // Тик мог перевести ивент upcoming → active либо active → finished.
+        // Перезагружаем Квесты, чтобы задачи такого ивента появились/исчезли там.
+        if (typeof loadTasks === 'function') {
+            await loadTasks();
+        }
     } catch (e) { /* тихо */ }
 }
 
@@ -716,12 +744,18 @@ function initCreateForm() {
 }
 
 function openCreateModal() {
-    const now     = new Date();
-    const in5min  = new Date(now.getTime() + 5 * 60000);
-    const in30d   = new Date(now.getTime() + 30 * 24 * 3600000);
-    const fmt = d => d.toISOString().slice(0, 16);
-    document.getElementById('ch-starts').value = fmt(in5min);
-    document.getElementById('ch-ends').value   = fmt(in30d);
+    const now   = new Date();
+    const in30d = new Date(now.getTime() + 30 * 24 * 3600000);
+    // <input type="datetime-local"> работает в ЛОКАЛЬНОМ времени, поэтому формат
+    // тоже должен быть локальным (toISOString() даёт UTC и сдвигает значение).
+    const fmtLocal = d => {
+        const off = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - off).toISOString().slice(0, 16);
+    };
+    // Старт = сейчас: вместе с серверным фиксом ивент создаётся сразу активным,
+    // и его задачи появляются в Квестах без ожидания admin/tick.
+    document.getElementById('ch-starts').value = fmtLocal(now);
+    document.getElementById('ch-ends').value   = fmtLocal(in30d);
     document.getElementById('challenge-modal').style.display = 'flex';
     document.getElementById('ch-error').style.display = 'none';
 }
@@ -858,6 +892,10 @@ async function submitCreateForm(e) {
         showToast('Ивент создан! 🏆');
         await loadChallenges();
         await loadCharacter();
+        // На случай, если ивент стартует сразу — подтянуть его задачи в Квесты.
+        if (typeof loadTasks === 'function') {
+            await loadTasks();
+        }
         openLivePanel(created.id);
     } catch (err) {
         errEl.textContent = err.message;

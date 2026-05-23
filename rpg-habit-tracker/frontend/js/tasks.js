@@ -152,14 +152,19 @@ function makeChallengeTaskCard(task) {
     if (task.is_timer_running && task.timer_started_at && !timerExpired) {
         startVisualTimer(task);
     }
-    // Если таймер истёк — сразу показываем "время вышло"
+    // Если таймер истёк — сразу показываем "время вышло".
+    // Карточка ещё не в DOM, поэтому ищем элемент внутри самой card после вставки.
     if (timerExpired) {
-        const timerEl = document.getElementById(`timer-${task.id}`);
-        if (timerEl) {
-            timerEl.style.display = 'inline-block';
-            timerEl.textContent = '✅ Время вышло! Нажми "Готово"';
-            timerEl.style.color = 'var(--accent-green)';
-        }
+        requestAnimationFrame(() => {
+            const timerEl = card.querySelector(`[id="timer-${task.id}"]`)
+                || document.getElementById(`timer-${task.id}`);
+            if (timerEl) {
+                timerEl.style.display = 'inline-block';
+                timerEl.textContent = '✅ Время вышло! Нажми "Готово"';
+                timerEl.style.color = 'var(--accent-green)';
+                timerEl.style.background = 'rgba(16,185,129,0.1)';
+            }
+        });
     }
 
     return card;
@@ -195,8 +200,10 @@ async function completeChallengeTask(taskId, challengeId, participantId) {
     try {
         const res = await api.request('POST', `/challenges/${challengeId}/tasks/${taskId}/complete`, null, true);
         showToast(res.message || 'Задача выполнена!');
-        if (res.xp_result?.xp_awarded) {
-            showXpAnimation(res.xp_result.xp_awarded);
+        // award_xp возвращает xp_gained (не xp_awarded) — иначе анимация не сработает
+        const gained = res.xp_result?.xp_gained ?? res.xp_result?.xp_awarded ?? 0;
+        if (gained) {
+            showXpAnimation(gained);
         }
         await loadTasks();
         await loadCharacter();
@@ -492,12 +499,23 @@ function moveCardToDoneSection(card, task) {
 }
 
 // ===== ВИЗУАЛЬНЫЙ ТАЙМЕР =====
-function startVisualTimer(task) {
+function startVisualTimer(task, _retry = 0) {
     if (activeTimers[task.id]) clearInterval(activeTimers[task.id]);
 
     const timerEl = document.getElementById(`timer-${task.id}`);
-    if (!timerEl) return;
+    if (!timerEl) {
+        // Карточка ещё не вставлена в DOM (make*Card вызывает таймер до appendChild).
+        // Пробуем на следующем кадре — но не бесконечно, чтобы не зациклиться,
+        // если карточка действительно удалена.
+        if (_retry < 5) {
+            requestAnimationFrame(() => startVisualTimer(task, _retry + 1));
+        }
+        return;
+    }
     timerEl.style.display = 'inline-block';
+
+    // Защита: без времени старта обратный отсчёт построить нельзя
+    if (!task.timer_started_at) { timerEl.style.display = 'none'; return; }
 
     const tsStr = task.timer_started_at.endsWith('Z') || task.timer_started_at.includes('+')
         ? task.timer_started_at : task.timer_started_at + 'Z';
