@@ -1,0 +1,336 @@
+<!-- Задача -->
+<div id="task-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Новая задача</h3>
+            <button class="modal-close" id="close-task-modal">✕</button>
+        </div>
+        <form id="task-form">
+            <div class="field">
+                <label>Название задачи</label>
+                <input id="task-title" type="text" placeholder="Что нужно сделать?" required maxlength="100">
+            </div>
+            <div class="field">
+                <label>Описание (необязательно)</label>
+                <input id="task-desc" type="text" placeholder="Детали...">
+            </div>
+            <div class="field">
+                <label>Сложность</label>
+                <div class="difficulty-select">
+                    <button type="button" class="diff-btn active" data-diff="easy">
+                        <span class="diff-icon">🟢</span>
+                        <span class="diff-name">Лёгкая</span>
+                        <span class="diff-reward">+10 XP · 5 мин</span>
+                    </button>
+                    <button type="button" class="diff-btn" data-diff="medium">
+                        <span class="diff-icon">🟡</span>
+                        <span class="diff-name">Средняя</span>
+                        <span class="diff-reward">+25 XP · 15 мин</span>
+                    </button>
+                    <button type="button" class="diff-btn" data-diff="hard">
+                        <span class="diff-icon">🔴</span>
+                        <span class="diff-name">Сложная</span>
+                        <span class="diff-reward">+50 XP · 60 мин</span>
+                    </button>
+                </div>
+            </div>
+            <div class="error-msg" id="task-error"></div>
+            <button type="submit" class="btn-primary">Создать задачу</button>
+        </form>
+    </div>
+</div>
+
+<!-- Цель -->
+<div id="goal-modal" class="modal-overlay" style="display:none">
+    <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+            <h3>🎯 Новая цель</h3>
+            <button class="modal-close" id="close-goal-modal">✕</button>
+        </div>
+        <form id="goal-form">
+            <div class="field">
+                <label>Название цели</label>
+                <input id="goal-title" type="text" placeholder="Например: Выучить испанский" required maxlength="100">
+            </div>
+            <div class="field-row">
+                <div class="field" style="flex:1">
+                    <label>Иконка (эмодзи)</label>
+                    <input id="goal-emoji" type="text" placeholder="🎯" maxlength="2">
+                </div>
+                <div class="field" style="flex:2">
+                    <label>Категория</label>
+                    <select id="goal-category" class="habit-select">
+                        <option value="health">💪 Здоровье</option>
+                        <option value="career">💼 Карьера</option>
+                        <option value="learning">📚 Обучение</option>
+                        <option value="finance">💰 Финансы</option>
+                        <option value="creative">🎨 Творчество</option>
+                        <option value="social">🤝 Общение</option>
+                        <option value="travel">✈️ Путешествия</option>
+                        <option value="other" selected>🎯 Другое</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>Редкость цели</label>
+                <div class="rarity-select">
+                    <button type="button" class="rarity-btn active" data-rarity="common">
+                        <span class="rarity-dot" style="background:#10b981"></span>
+                        <div>
+                            <div class="rarity-name">Обычная</div>
+                            <div class="rarity-hint">10 подзадач · 60 XP · мин. дедлайн 3 дня</div>
+                        </div>
+                    </button>
+                    <button type="button" class="rarity-btn" data-rarity="rare">
+                        <span class="rarity-dot" style="background:#06b6d4"></span>
+                        <div>
+                            <div class="rarity-name">Редкая</div>
+                            <div class="rarity-hint">15 подзадач · 100 XP · мин. дедлайн 7 дней</div>
+                        </div>
+                    </button>
+                    <button type="button" class="rarity-btn" data-rarity="epic">
+                        <span class="rarity-dot" style="background:#7c3aed"></span>
+                        <div>
+                            <div class="rarity-name">Эпическая</div>
+                            <div class="rarity-hint">20 подзадач · 180 XP · мин. дедлайн 14 дней</div>
+                        </div>
+                    </button>
+                    <button type="button" class="rarity-btn" data-rarity="legendary">
+                        <span class="rarity-dot" style="background:#f59e0b"></span>
+                        <div>
+                            <div class="rarity-name">Легендарная</div>
+                            <div class="rarity-hint">25 подзадач · 300 XP · мин. дедлайн 30 дней</div>
+                        </div>
+                    </button>
+                </div>
+                <input type="hidden" id="goal-rarity" value="common">
+            </div>
+            <div class="field">
+                <label>Дедлайн <span style="color:var(--text-muted);font-weight:400">(необязательно)</span></label>
+                <div class="deadline-picker" id="deadline-picker">
+                    <div class="deadline-display" id="deadline-display" onclick="toggleDeadlinePicker()">
+                        <span id="deadline-text">Без дедлайна</span>
+                        <span class="deadline-picker-icon">📅</span>
+                    </div>
+                    <div class="deadline-dropdown" id="deadline-dropdown" style="display:none">
+                        <div class="deadline-calendar">
+                            <div class="dcal-header">
+                                <button type="button" class="dcal-nav" id="dcal-prev">‹</button>
+                                <span class="dcal-month" id="dcal-month"></span>
+                                <button type="button" class="dcal-nav" id="dcal-next">›</button>
+                            </div>
+                            <div class="dcal-weekdays">
+                                <span>Пн</span><span>Вт</span><span>Ср</span>
+                                <span>Чт</span><span>Пт</span>
+                                <span style="color:var(--accent-pink)">Сб</span>
+                                <span style="color:var(--accent-pink)">Вс</span>
+                            </div>
+                            <div class="dcal-grid" id="dcal-grid"></div>
+                        </div>
+                        <div class="deadline-actions">
+                            <button type="button" class="dcal-clear" onclick="clearDeadline()">Без дедлайна</button>
+                            <button type="button" class="dcal-confirm" onclick="confirmDeadline()">Готово</button>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="goal-deadline">
+            </div>
+            <div class="field">
+                <label>Описание <span style="color:var(--text-muted);font-weight:400">(необязательно)</span></label>
+                <input id="goal-desc" type="text" placeholder="Зачем эта цель?">
+            </div>
+            <div class="field">
+                <label class="checkbox-label" for="goal-is-main">
+                    <input type="checkbox" id="goal-is-main">
+                    <span>⚡ Сделать главным квестом (только один активный)</span>
+                </label>
+            </div>
+            <div class="error-msg" id="goal-error"></div>
+            <button type="submit" class="btn-primary">Создать цель</button>
+        </form>
+    </div>
+</div>
+
+<!-- Подзадача -->
+<div id="subtask-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Добавить подзадачу</h3>
+            <button class="modal-close" id="close-subtask-modal">✕</button>
+        </div>
+        <form id="subtask-form">
+            <input type="hidden" id="subtask-goal-id">
+            <div class="field">
+                <label>Название подзадачи</label>
+                <input id="subtask-title" type="text" placeholder="Что нужно сделать?" required maxlength="100">
+            </div>
+            <div class="field">
+                <label>Награда XP</label>
+                <input id="subtask-xp" type="number" value="10" min="1" max="50">
+                <div id="subtask-xp-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>
+            </div>
+            <div class="error-msg" id="subtask-error"></div>
+            <button type="submit" class="btn-primary">Добавить</button>
+        </form>
+    </div>
+</div>
+
+<!-- Привычка -->
+<div id="habit-modal" class="modal-overlay" style="display:none">
+    <div class="modal habit-modal-wide">
+        <div class="modal-header">
+            <h3>🌱 Новая привычка</h3>
+            <button class="modal-close" id="close-habit-modal">✕</button>
+        </div>
+        <form id="habit-form">
+            <div class="field">
+                <label>Название</label>
+                <input id="habit-title" type="text" placeholder="Например: Читать перед сном" required maxlength="100">
+            </div>
+            <div class="field">
+                <label>Категория</label>
+                <div class="category-grid">
+                    <button type="button" class="cat-btn active" data-cat="health"><span class="cat-icon">💪</span><span>Здоровье</span></button>
+                    <button type="button" class="cat-btn" data-cat="learning"><span class="cat-icon">📚</span><span>Обучение</span></button>
+                    <button type="button" class="cat-btn" data-cat="productive"><span class="cat-icon">⚡</span><span>Продукт.</span></button>
+                    <button type="button" class="cat-btn" data-cat="creative"><span class="cat-icon">🎨</span><span>Творчество</span></button>
+                    <button type="button" class="cat-btn" data-cat="social"><span class="cat-icon">🤝</span><span>Общение</span></button>
+                    <button type="button" class="cat-btn" data-cat="other"><span class="cat-icon">✨</span><span>Другое</span></button>
+                </div>
+            </div>
+            <div class="field">
+                <label>Периодичность</label>
+                <div class="freq-tabs">
+                    <button type="button" class="freq-tab active" data-freq="daily">Каждый день</button>
+                    <button type="button" class="freq-tab" data-freq="weekdays">Будни</button>
+                    <button type="button" class="freq-tab" data-freq="custom">Свои дни</button>
+                </div>
+                <div class="days-picker" id="days-picker" style="display:none">
+                    <button type="button" class="day-btn" data-day="0">Пн</button>
+                    <button type="button" class="day-btn" data-day="1">Вт</button>
+                    <button type="button" class="day-btn" data-day="2">Ср</button>
+                    <button type="button" class="day-btn" data-day="3">Чт</button>
+                    <button type="button" class="day-btn" data-day="4">Пт</button>
+                    <button type="button" class="day-btn" data-day="5">Сб</button>
+                    <button type="button" class="day-btn" data-day="6">Вс</button>
+                </div>
+            </div>
+            <div class="field">
+                <label>Длительность <span style="color:var(--text-muted);font-weight:400">(необязательно)</span></label>
+                <div class="duration-picker">
+                    <div class="duration-col">
+                        <button type="button" class="dur-arrow" data-target="dur-hours" data-dir="up">▲</button>
+                        <div class="dur-display" id="dur-hours">0</div>
+                        <button type="button" class="dur-arrow" data-target="dur-hours" data-dir="down">▼</button>
+                        <div class="dur-label">часов</div>
+                    </div>
+                    <div class="dur-sep">:</div>
+                    <div class="duration-col">
+                        <button type="button" class="dur-arrow" data-target="dur-mins" data-dir="up">▲</button>
+                        <div class="dur-display" id="dur-mins">00</div>
+                        <button type="button" class="dur-arrow" data-target="dur-mins" data-dir="down">▼</button>
+                        <div class="dur-label">минут</div>
+                    </div>
+                    <button type="button" class="dur-clear" id="dur-clear-btn" style="display:none">✕ Без времени</button>
+                </div>
+                <input type="hidden" id="habit-duration-hidden">
+            </div>
+            <div class="field">
+                <label>Напоминание <span style="color:var(--text-muted);font-weight:400">(необязательно)</span></label>
+                <select id="habit-reminder" class="habit-select">
+                    <option value="">Без напоминания</option>
+                    <option value="morning">🌅 Утро</option>
+                    <option value="afternoon">☀️ День</option>
+                    <option value="evening">🌙 Вечер</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Цвет метки</label>
+                <div class="color-picker">
+                    <button type="button" class="color-btn active" data-color="#7c3aed" style="background:#7c3aed"></button>
+                    <button type="button" class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
+                    <button type="button" class="color-btn" data-color="#10b981" style="background:#10b981"></button>
+                    <button type="button" class="color-btn" data-color="#f59e0b" style="background:#f59e0b"></button>
+                    <button type="button" class="color-btn" data-color="#ef4444" style="background:#ef4444"></button>
+                    <button type="button" class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
+                    <button type="button" class="color-btn" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+                    <button type="button" class="color-btn" data-color="#14b8a6" style="background:#14b8a6"></button>
+                </div>
+            </div>
+            <div class="error-msg" id="habit-error"></div>
+            <button type="submit" class="btn-primary">Создать привычку</button>
+        </form>
+    </div>
+</div>
+
+<!-- Ивент -->
+<div id="challenge-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Новый ивент</h3>
+            <button class="modal-close" id="close-challenge-modal">✕</button>
+        </div>
+        <form id="challenge-form">
+            <div class="field">
+                <label>Название</label>
+                <input id="ch-title" type="text" placeholder="Например: 30 дней спорта" required maxlength="100">
+            </div>
+            <div class="field">
+                <label>Описание</label>
+                <input id="ch-desc" type="text" placeholder="Условия участия...">
+            </div>
+            <div class="field">
+                <label>Тип</label>
+                <div class="gender-select">
+                    <button type="button" class="gender-btn active" data-type="public">🌍 Публичный</button>
+                    <button type="button" class="gender-btn" data-type="private">🔒 Приватный</button>
+                </div>
+            </div>
+            <div class="field">
+                <label>Ставка организатора (₡)</label>
+                <input id="ch-stake" type="number" value="100" min="10" max="10000">
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+                    Взнос участников: <span id="ch-entry-preview">50</span> ₡
+                </div>
+            </div>
+            <div class="field">
+                <label>Дата начала</label>
+                <input id="ch-starts" type="datetime-local" required>
+            </div>
+            <div class="field">
+                <label>Дата окончания</label>
+                <input id="ch-ends" type="datetime-local" required>
+            </div>
+            <div class="error-msg" id="ch-error"></div>
+            <button type="submit" class="btn-primary">Создать ивент</button>
+        </form>
+    </div>
+</div>
+
+<!-- Лидерборд -->
+<div id="leaderboard-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="lb-title">Таблица лидеров</h3>
+            <button class="modal-close" id="close-lb-modal">✕</button>
+        </div>
+        <div class="lb-prize-pool" id="lb-prize-pool"></div>
+        <div id="lb-list" class="lb-list"></div>
+        <div id="lb-finish-btn-wrap" style="margin-top:16px;display:none">
+            <button class="btn-primary" id="finish-challenge-btn">🏁 Завершить и выдать призы</button>
+        </div>
+    </div>
+</div>
+
+<!-- Подтверждение -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+    <div class="modal confirm-modal">
+        <div class="confirm-icon">🗑️</div>
+        <h3 class="confirm-title">Удалить?</h3>
+        <p class="confirm-sub" id="confirm-subtitle">Это действие нельзя отменить</p>
+        <div class="confirm-actions">
+            <button class="btn-confirm-cancel" id="confirm-cancel">Отмена</button>
+            <button class="btn-confirm-delete" id="confirm-ok">Удалить</button>
+        </div>
+    </div>
+</div>

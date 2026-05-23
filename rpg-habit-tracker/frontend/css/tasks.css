@@ -1,0 +1,278 @@
+/* Layout */
+#page-daily {
+    height: calc(100dvh - var(--header-h));
+    overflow: hidden;
+}
+
+.daily-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    height: 100%;
+    width: 100%;
+}
+
+/* Сайдбар персонажа */
+.sidebar {
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.char-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.char-avatar-wrap { position: relative; }
+
+.char-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #a78bfa, #7c3aed 60%, #4c1d95);
+    border: 3px solid var(--accent-purple);
+    box-shadow: 0 0 20px var(--accent-purple-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+}
+
+.char-level-badge {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--accent-purple);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 20px;
+    padding: 2px 7px;
+    border: 2px solid var(--bg-secondary);
+}
+
+.char-name { font-size: 16px; font-weight: 700; text-align: center; }
+
+.char-rank {
+    font-size: 12px;
+    color: var(--accent-cyan);
+    font-weight: 600;
+    background: rgba(6,182,212,0.1);
+    border: 1px solid rgba(6,182,212,0.3);
+    border-radius: 20px;
+    padding: 3px 12px;
+}
+
+.xp-section {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+}
+
+.xp-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+}
+
+.xp-label-text { font-weight: 600; color: var(--accent-purple-bright); }
+
+.xp-bar {
+    height: 8px;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    box-shadow: 0 0 6px var(--accent-purple-glow);
+}
+
+.xp-cap-label { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; }
+
+.char-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+}
+
+.stat-cell {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 6px;
+    text-align: center;
+}
+
+.stat-icon { font-size: 14px; margin-bottom: 3px; }
+.stat-val { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.stat-val.gold { color: var(--accent-yellow); }
+.stat-val.fire { color: var(--accent-pink); }
+.stat-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+.double-xp-banner {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.2));
+    border: 1px solid var(--accent-cyan);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Список задач */
+.tasks-main {
+    padding: 24px 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.tasks-header { display: flex; align-items: center; justify-content: space-between; }
+.tasks-title { font-size: 18px; font-weight: 700; }
+.tasks-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-section-header {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 6px 0 2px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Карточка задачи */
+.task-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.task-card.card-visible { opacity: 1; transform: translateY(0); }
+.task-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--diff-color, var(--accent-purple));
+}
+
+.task-card:hover { border-color: var(--border-bright); background: var(--bg-card-hover); }
+.task-card.task-done { opacity: 0.5; }
+
+.task-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+
+.task-diff-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.task-meta { display: flex; gap: 5px; flex-wrap: wrap; }
+
+.task-timer {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.task-actions { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; flex-shrink: 0; }
+
+.btn-start, .btn-complete, .btn-undone {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    border: none;
+    font-family: inherit;
+}
+
+.btn-start { background: var(--accent-purple); color: #fff; }
+.btn-start:hover { background: var(--accent-purple-bright); }
+.btn-complete { background: var(--accent-green); color: #fff; }
+.btn-complete:hover { opacity: 0.85; }
+.btn-undone { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+.btn-undone:hover { border-color: var(--accent-yellow); color: var(--accent-yellow); }
+
+/* Выбор сложности */
+.difficulty-select { display: flex; flex-direction: column; gap: 8px; }
+
+.diff-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+}
+
+.diff-btn.active { border-color: var(--accent-purple); background: rgba(124,58,237,0.08); }
+.diff-icon { font-size: 16px; }
+.diff-name { font-weight: 600; font-size: 14px; flex: 1; color: var(--text-primary); }
+.diff-reward { font-size: 12px; color: var(--accent-purple-bright); }
+
+/* Адаптация */
+@media (max-width: 768px) {
+    #page-daily { height: auto; overflow: visible; }
+
+    .daily-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 14px; }
+
+    .char-card { flex-direction: row; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-start; }
+    .char-avatar { width: 56px; height: 56px; font-size: 28px; }
+    .char-level-badge { font-size: 9px; padding: 1px 5px; }
+    .char-name { font-size: 14px; }
+    .char-rank { font-size: 11px; }
+    .xp-section { order: 10; flex: 0 0 100%; }
+    .char-stats-grid { order: 9; gap: 5px; }
+
+    .tasks-main { padding: 16px; }
+    .task-card { flex-direction: column; gap: 10px; }
+    .task-actions { flex-direction: row; width: 100%; justify-content: flex-end; }
+}

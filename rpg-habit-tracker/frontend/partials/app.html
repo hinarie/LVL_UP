@@ -1,0 +1,46 @@
+<div id="app-screen" class="screen">
+    <header class="app-header">
+        <div class="header-logo">LVL<span>UP</span></div>
+        <nav class="header-nav">
+            <button class="nav-btn active" data-page="daily">Квесты</button>
+            <button class="nav-btn" data-page="habits">Привычки</button>
+            <button class="nav-btn" data-page="goals">Цели</button>
+            <button class="nav-btn" data-page="shop">Магазин</button>
+            <button class="nav-btn" data-page="challenges">Ивенты</button>
+            <button class="nav-btn" data-page="feed">Лента</button>
+            <button class="nav-btn" data-page="profile">Профиль</button>
+        </nav>
+        <div class="header-user">
+            <span id="user-email" class="user-email"></span>
+            <button id="logout-btn" class="btn-logout">Выйти</button>
+        </div>
+    </header>
+
+    <nav class="mobile-nav">
+        <button class="mobile-nav-btn active" data-page="daily">
+            <span class="nav-icon">⚔️</span><span>Квесты</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="habits">
+            <span class="nav-icon">🌱</span><span>Привычки</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="goals">
+            <span class="nav-icon">🎯</span><span>Цели</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="shop">
+            <span class="nav-icon">🛒</span><span>Магазин</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="challenges">
+            <span class="nav-icon">🏆</span><span>Ивенты</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="feed">
+            <span class="nav-icon">🌐</span><span>Лента</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="profile">
+            <span class="nav-icon">👤</span><span>Профиль</span>
+        </button>
+    </nav>
+
+    <main class="app-main">
+        {{pages}}
+    </main>
+</div>

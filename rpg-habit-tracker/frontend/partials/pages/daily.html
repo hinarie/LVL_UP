@@ -1,0 +1,56 @@
+<div id="page-daily" class="page active">
+    <div class="daily-layout">
+        <aside class="sidebar">
+            <div class="char-card">
+                <div class="char-avatar-wrap">
+                    <div class="char-avatar" id="char-avatar">🐣</div>
+                    <div class="char-level-badge" id="char-level">1</div>
+                </div>
+                <div class="char-name" id="char-name">Герой</div>
+                <div class="char-rank" id="char-rank">Warrior</div>
+                <div class="xp-section">
+                    <div class="xp-bar-labels">
+                        <span class="xp-label-text">XP</span>
+                        <span id="xp-label">0 / 1000</span>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+                    </div>
+                    <div class="xp-cap-label" id="xp-cap-label">Сегодня: 0 / 200 XP</div>
+                </div>
+                <div class="char-stats-grid">
+                    <div class="stat-cell">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-val" id="char-level-stat">1</div>
+                        <div class="stat-lbl">Уровень</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-icon">₡</div>
+                        <div class="stat-val gold" id="char-credits">0</div>
+                        <div class="stat-lbl">Кредиты</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-val fire" id="char-streak">0</div>
+                        <div class="stat-lbl">Стрик</div>
+                    </div>
+                </div>
+                <div class="double-xp-banner" id="double-xp-banner" style="display:none">
+                    ⚡ Двойной опыт активен!
+                </div>
+            </div>
+        </aside>
+        <main class="tasks-main">
+            <div class="tasks-header">
+                <h2 class="tasks-title">⚔️ Ежедневные задачи</h2>
+                <button class="btn-add" id="open-task-modal">+ Новая задача</button>
+            </div>
+            <div class="tasks-list" id="tasks-list">
+                <div class="tasks-empty" id="tasks-empty">
+                    <div class="empty-icon">📋</div>
+                    <p>Нет активных задач.<br>Создай первый квест!</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>

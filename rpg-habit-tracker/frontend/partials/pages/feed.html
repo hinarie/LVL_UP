@@ -1,0 +1,49 @@
+<div id="page-feed" class="page">
+    <div class="feed-layout">
+        <aside class="feed-sidebar">
+            <div class="feed-card">
+                <div class="feed-card-title">✍️ Написать пост</div>
+                <textarea id="post-content" class="post-textarea"
+                    placeholder="Поделись своим прогрессом..." rows="3" maxlength="500"></textarea>
+                <div class="post-footer">
+                    <select id="post-visibility" class="post-vis-select">
+                        <option value="public">🌍 Публично</option>
+                        <option value="friends">👥 Друзья</option>
+                        <option value="private">🔒 Только я</option>
+                    </select>
+                    <button class="btn-post" id="submit-post">Опубликовать</button>
+                </div>
+            </div>
+            <div class="feed-card" id="friend-requests-card" style="display:none">
+                <div class="feed-card-title">👋 Запросы в друзья</div>
+                <div id="friend-requests-list"></div>
+            </div>
+            <div class="feed-card">
+                <div class="feed-card-title">➕ Добавить друга</div>
+                <div class="add-friend-row">
+                    <input id="friend-email" type="email" class="friend-input" placeholder="email@example.com">
+                    <button class="btn-add-friend" id="send-friend-request">Добавить</button>
+                </div>
+                <div class="error-msg" id="friend-error"></div>
+            </div>
+            <div class="feed-card">
+                <div class="feed-card-title">👥 Мои друзья</div>
+                <div id="friends-list" class="friends-list">
+                    <div class="friends-empty">Пока нет друзей</div>
+                </div>
+            </div>
+        </aside>
+        <main class="feed-main">
+            <div class="feed-header">
+                <h2 class="tasks-title">🌐 Лента</h2>
+                <button class="btn-refresh" id="refresh-feed">↻ Обновить</button>
+            </div>
+            <div id="posts-list" class="posts-list">
+                <div class="tasks-empty">
+                    <div class="empty-icon">📰</div>
+                    <p>Лента пуста.<br>Напиши первый пост!</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>

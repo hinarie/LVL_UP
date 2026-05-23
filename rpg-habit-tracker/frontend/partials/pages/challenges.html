@@ -1,0 +1,206 @@
+<div id="page-challenges" class="page">
+
+    <!-- ══ КАТАЛОГ ══════════════════════════════════════════════ -->
+    <div id="ch-catalog" class="ch-catalog">
+        <div class="ch-catalog-inner">
+
+            <div class="ch-page-header">
+                <div class="ch-page-title">
+                    <span class="ch-page-emoji">🏆</span>
+                    <h2>Ивенты</h2>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="ch-filter-tabs" id="ch-filter-tabs">
+                        <button class="ch-filter-tab active" data-filter="all">Все</button>
+                        <button class="ch-filter-tab" data-filter="joined">Участвую</button>
+                        <button class="ch-filter-tab" data-filter="mine">Мои</button>
+                    </div>
+                    <button class="btn-create-event" id="open-challenge-modal">+ Создать ивент</button>
+                </div>
+            </div>
+
+            <div class="ch-two-col" id="ch-two-col">
+
+                <!-- Список карточек -->
+                <div class="ch-list-col">
+                    <div class="ch-section" id="ch-section-joined">
+                        <div class="ch-section-label" id="ch-label-joined">Участвую</div>
+                        <div class="challenges-list" id="my-challenges-list">
+                            <div class="ch-empty">
+                                <div class="ch-empty-icon">🏆</div>
+                                <p>Вступи в ивент и выиграй кредиты</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ch-section" id="ch-section-public">
+                        <div class="ch-section-label" id="ch-label-public">Открытые ивенты</div>
+                        <div class="challenges-list" id="public-challenges-list">
+                            <div class="ch-empty"><p>Загрузка...</p></div>
+                        </div>
+                    </div>
+                    <div id="ch-archive-section" style="display:none" class="ch-section">
+                        <div class="ch-archive-toggle" onclick="toggleArchive()">
+                            <span class="ch-section-label">Завершённые</span>
+                            <span class="ch-archive-count" id="ch-archive-count">0</span>
+                            <span class="ch-archive-chevron" id="ch-archive-chevron">▼ показать</span>
+                        </div>
+                        <div class="challenges-list" id="ch-archive-list" style="display:none"></div>
+                    </div>
+                </div>
+
+                <!-- Живая панель -->
+                <div class="ch-live-panel" id="ch-live-panel">
+                    <div class="ch-live-empty" id="ch-live-empty">
+                        <div class="ch-live-empty-icon">👈</div>
+                        <p>Выбери ивент слева</p>
+                    </div>
+                    <div class="ch-live-content" id="ch-live-content" style="display:none">
+
+                        <div class="ch-live-header">
+                            <div class="ch-live-title-row">
+                                <span class="ch-live-emoji" id="lp-emoji">🏆</span>
+                                <div class="ch-live-title-info">
+                                    <div class="ch-live-badges" id="lp-badges"></div>
+                                    <div class="ch-live-title" id="lp-title"></div>
+                                    <div class="ch-live-desc" id="lp-desc"></div>
+                                </div>
+                            </div>
+                            <div class="ch-live-stats" id="lp-stats"></div>
+                            <div class="ch-live-progress" id="lp-progress" style="display:none">
+                                <div class="ch-live-progress-bar">
+                                    <div class="ch-live-progress-fill" id="lp-progress-fill"></div>
+                                </div>
+                                <div class="ch-live-progress-label" id="lp-progress-label"></div>
+                            </div>
+                            <div class="ch-live-actions" id="lp-actions"></div>
+                        </div>
+
+                        <div class="ch-live-tabs">
+                            <button class="ch-live-tab active" data-tab="tasks">Задачи</button>
+                            <button class="ch-live-tab" data-tab="board">Лидерборд</button>
+                            <button class="ch-live-tab" data-tab="feed">Лента</button>
+                        </div>
+
+                        <div class="ch-live-panels">
+
+                            <div class="ch-live-panel-content active" id="lp-tab-tasks">
+                                <div id="lp-tasks-list" class="lp-tasks-list"></div>
+                            </div>
+
+                            <div class="ch-live-panel-content" id="lp-tab-board">
+                                <div class="lp-prizes" id="lp-prizes"></div>
+                                <div class="lp-board-list" id="lp-board-list"></div>
+                                <div id="lp-finish-wrap" style="display:none;margin-top:12px">
+                                    <button class="btn-finish-event" id="lp-finish-btn">
+                                        🏁 Завершить и выдать призы
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="ch-live-panel-content" id="lp-tab-feed">
+                                <div class="lp-post-form" id="lp-post-form" style="display:none">
+                                    <textarea id="lp-post-input" class="lp-post-textarea"
+                                        placeholder="Поделись прогрессом..." maxlength="500" rows="2"></textarea>
+                                    <div class="lp-post-footer">
+                                        <label class="lp-crosspost-label">
+                                            <input type="checkbox" id="lp-crosspost-check">
+                                            <span>В глобальную ленту</span>
+                                        </label>
+                                        <button class="btn-post-submit" id="lp-post-btn">Опубликовать</button>
+                                    </div>
+                                </div>
+                                <div class="lp-feed-list" id="lp-feed-list"></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ MODAL: Создание ивента ════════════════════════════════ -->
+<div class="modal-overlay" id="challenge-modal" style="display:none">
+    <div class="modal-panel ch-create-modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Новый ивент</h3>
+            <button class="modal-close" id="close-challenge-modal">✕</button>
+        </div>
+
+        <form id="challenge-form" class="ch-create-form" autocomplete="off">
+            <div class="ch-form-error" id="ch-error" style="display:none"></div>
+
+            <div class="ch-form-grid-2">
+                <div class="ch-form-field" style="grid-column:1/-1">
+                    <label class="ch-form-label">Название <span class="req">*</span></label>
+                    <input id="ch-title" type="text" class="ch-form-input" placeholder="Например: 30 дней без сахара" required maxlength="100">
+                </div>
+
+                <div class="ch-form-field" style="grid-column:1/-1">
+                    <label class="ch-form-label">Описание</label>
+                    <textarea id="ch-desc" class="ch-form-input ch-form-textarea" placeholder="Расскажи участникам о цели" maxlength="300" rows="2"></textarea>
+                </div>
+
+                <div class="ch-form-field">
+                    <label class="ch-form-label">Эмодзи</label>
+                    <input id="ch-emoji" type="text" class="ch-form-input ch-emoji-input" value="🏆" maxlength="2">
+                </div>
+
+                <div class="ch-form-field">
+                    <label class="ch-form-label">Тип</label>
+                    <div class="ch-type-group">
+                        <button type="button" class="ch-type-btn active" data-type="public">🌍 Публичный</button>
+                        <button type="button" class="ch-type-btn" data-type="friends">👥 Для друзей</button>
+                    </div>
+                </div>
+
+                <div class="ch-form-field" style="grid-column:1/-1">
+                    <label class="ch-form-label">Минимальный ранг</label>
+                    <select id="ch-rank" class="ch-form-input ch-form-select">
+                        <option value="">Нет ограничений</option>
+                        <option value="Warrior">⚔️ Warrior</option>
+                        <option value="Elite">🛡️ Elite</option>
+                        <option value="Master">🗡️ Master</option>
+                        <option value="Grandmaster">👑 Grandmaster</option>
+                        <option value="Epic">💎 Epic</option>
+                        <option value="Legend">🌟 Legend</option>
+                        <option value="Mythic">🔮 Mythic</option>
+                    </select>
+                </div>
+
+                <div class="ch-form-field">
+                    <label class="ch-form-label">Ваша ставка (кредиты) <span class="req">*</span></label>
+                    <input id="ch-stake" type="number" class="ch-form-input" value="100" min="10" step="10" required>
+                </div>
+
+                <div class="ch-form-field">
+                    <label class="ch-form-label">Взнос участника</label>
+                    <div class="ch-stake-preview"><span id="ch-entry-preview">50</span> ₡</div>
+                </div>
+
+                <div class="ch-form-field">
+                    <label class="ch-form-label">Начало <span class="req">*</span></label>
+                    <input id="ch-starts" type="datetime-local" class="ch-form-input" required>
+                </div>
+
+                <div class="ch-form-field">
+                    <label class="ch-form-label">Конец <span class="req">*</span></label>
+                    <input id="ch-ends" type="datetime-local" class="ch-form-input" required>
+                </div>
+            </div>
+
+            <div class="ch-tasks-section">
+                <div class="ch-tasks-section-header">
+                    <label class="ch-form-label">Задачи ивента <span class="req">*</span></label>
+                    <button type="button" class="ch-add-task-btn" id="ch-add-task-btn">+ Добавить</button>
+                </div>
+                <div id="ch-tasks-builder"></div>
+            </div>
+
+            <button type="submit" class="ch-submit-btn">Создать ивент</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+<div id="page-habits" class="page">
+    <div class="habits-layout">
+        <aside class="habits-sidebar">
+            <div class="habits-today-card">
+                <div class="today-header">
+                    <div class="today-date" id="habits-today-date"></div>
+                    <div class="today-title">Сегодня</div>
+                </div>
+                <div class="today-progress-wrap">
+                    <div class="today-progress-bar">
+                        <div class="today-progress-fill" id="today-progress-fill" style="width:0%"></div>
+                    </div>
+                    <div class="today-progress-label" id="today-progress-label">0 / 0 привычек</div>
+                </div>
+                <div class="today-habits-list" id="today-habits-list">
+                    <div class="today-empty">На сегодня привычек нет</div>
+                </div>
+            </div>
+            <div class="habits-mini-cal-card">
+                <div class="mini-cal-header">
+                    <button class="cal-nav-btn" id="cal-prev">‹</button>
+                    <span class="mini-cal-title" id="mini-cal-title"></span>
+                    <button class="cal-nav-btn" id="cal-next">›</button>
+                </div>
+                <div class="mini-cal-weekdays">
+                    <span>Пн</span><span>Вт</span><span>Ср</span>
+                    <span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                </div>
+                <div class="mini-cal-grid" id="mini-cal-grid"></div>
+                <div class="cal-legend">
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot" style="background:var(--accent-purple)"></div>
+                        <span>Все выполнены</span>
+                    </div>
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot" style="background:var(--accent-yellow)"></div>
+                        <span>Частично</span>
+                    </div>
+                    <div class="cal-legend-item">
+                        <div class="cal-legend-dot cal-legend-empty"></div>
+                        <span>Не выполнено</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="habits-main">
+            <div class="tasks-header">
+                <h2 class="tasks-title">🌱 Все привычки</h2>
+                <button class="btn-add" id="open-habit-modal">+ Новая привычка</button>
+            </div>
+            <div id="habits-list" class="habits-list"></div>
+        </main>
+    </div>
+</div>
