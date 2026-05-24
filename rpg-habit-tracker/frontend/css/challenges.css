@@ -1449,13 +1449,6 @@
     .ch-form-grid-2 { grid-template-columns: 1fr; }
 
     .ch-task-row-opts { grid-template-columns: 1fr 1fr; }
-
-    /* Живая панель — показываем всегда если есть контент */
-    .ch-live-panel {
-        display: flex !important;
-    }
-
-    /* Скрываем пустой стейт только через JS */
 }
 
 /* ── tasks.css дополнения: карточка задачи из ивента ─────────── */
@@ -1486,22 +1479,77 @@
     background: rgba(124,58,237,0.05);
 }
 
-/* ── Мобилка: список сверху, детали ивента снизу ───────────── */
+/* ── Мобилка: мастер-деталь (список ⇄ детали как два экрана) ──── */
 @media (max-width: 900px) {
-    /* Список ивентов идёт первым — пользователь видит каталог, тапает карточку,
-       и JS плавно подкручивает к деталям (живой панели) ниже. */
-    .ch-list-col   { order: 0; }
-    .ch-live-panel { order: 1; }
+    /* На мобиле колонки превращаются в один поток. По умолчанию (или явно
+       data-mobile-view="list") показываем список и прячем живую панель.
+       После тапа по карточке JS ставит data-mobile-view="detail". */
+    #page-challenges[data-mobile-view="list"] .ch-live-panel { display: none; }
+    #page-challenges[data-mobile-view="detail"] .ch-catalog .ch-list-col { display: none; }
+    #page-challenges[data-mobile-view="detail"] .ch-page-header { display: none; }
 
-    /* Порядок секций внутри списка */
+    /* Детали разворачиваются на всю ширину */
+    #page-challenges[data-mobile-view="detail"] .ch-two-col {
+        grid-template-columns: 1fr;
+    }
+    .ch-list-col { display: flex; flex-direction: column; }
+
+    /* Порядок секций списка: Участвую → Открытые → Завершённые (в самом конце) */
     #ch-section-joined  { order: 0; }
     #ch-section-public  { order: 1; }
     #ch-archive-section { order: 2; }
 
-    .ch-list-col {
-        display: flex;
-        flex-direction: column;
+    /* Плавный вход экрана деталей: лёгкое скольжение справа + проявление */
+    #page-challenges[data-mobile-view="detail"] .ch-live-panel {
+        animation: ch-detail-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
+    /* Кнопка «Назад» проявляется чуть позже — приятный каскад */
+    #page-challenges[data-mobile-view="detail"] .ch-live-back {
+        animation: ch-fade-in 0.35s ease 0.05s both;
+    }
+}
+
+@keyframes ch-detail-in {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes ch-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+/* Уважаем системную настройку «меньше движения» */
+@media (prefers-reduced-motion: reduce) {
+    #page-challenges[data-mobile-view="detail"] .ch-live-panel,
+    #page-challenges[data-mobile-view="detail"] .ch-live-back {
+        animation: none;
+    }
+}
+
+/* ── Кнопка «Назад» в деталях (видна только на мобиле) ───────── */
+.ch-live-back { display: none; }
+
+@media (max-width: 900px) {
+    .ch-live-back {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 14px;
+        background: var(--bg-secondary);
+        border: none;
+        border-bottom: 1px solid var(--border);
+        color: var(--accent-purple-bright);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .ch-live-back:active { background: var(--bg-card-hover); }
+    .ch-live-back-arrow { font-size: 18px; line-height: 1; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1509,23 +1557,18 @@
    Один блок, чтобы не плодить разрозненные правила.
 ══════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-    /* Живая панель как «экран деталей»: чуть отделяем от списка */
-    .ch-live-panel {
-        scroll-margin-top: calc(var(--header-h, 56px) + 8px);
+    /* В деталях панель занимает всю ширину и растёт по контенту
+       (на десктопе она sticky с ограниченной высотой — здесь сбрасываем). */
+    #page-challenges[data-mobile-view="detail"] .ch-live-panel {
+        position: static;
+        max-height: none;
+        min-height: calc(100dvh - var(--header-h) - 24px);
     }
+    .ch-live-panels { overflow: visible; }
 
-    /* Активная карточка — заметная подсветка + подсказка, что детали ниже */
+    /* Активная карточка в списке — заметная подсветка */
     .challenge-card.active {
         box-shadow: 0 0 0 1px var(--accent-purple), 0 6px 18px rgba(124,58,237,0.18);
-    }
-    .challenge-card.active::after {
-        content: "Детали ниже ↓";
-        display: block;
-        margin-top: 8px;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--accent-purple-bright);
-        text-align: center;
     }
 
     /* Тач-цели: основные кнопки действий не ниже ~44px */
@@ -1573,4 +1616,54 @@
     }
     /* .modal-overlay уже получает align-items:flex-end из components.css,
        так что панель прижимается к низу экрана как нативный шит. */
+}
+
+/* ── Удаление своих постов и комментариев в ленте ивента ─────── */
+.lp-post-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    flex-shrink: 0;
+    line-height: 1;
+}
+.lp-post-del:hover {
+    color: var(--accent-red);
+    background: rgba(239,68,68,0.1);
+}
+
+.lp-comment-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 4px;
+    margin-left: auto;        /* прижать к правому краю строки автор+время */
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    line-height: 1;
+}
+.lp-comment-del:hover {
+    color: var(--accent-red);
+    background: rgba(239,68,68,0.1);
+}
+
+/* Реакции в завершённом ивенте — только просмотр, без интерактива */
+.lp-reaction-readonly {
+    cursor: default;
+    opacity: 0.85;
+}
+.lp-reaction-readonly:hover {
+    border-color: var(--border);
+}
+
+/* На мобиле кнопки удаления крупнее под палец */
+@media (max-width: 900px) {
+    .lp-post-del { font-size: 16px; padding: 6px 8px; }
+    .lp-comment-del { font-size: 13px; padding: 2px 6px; }
 }

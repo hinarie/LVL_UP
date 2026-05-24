@@ -1,6 +1,7 @@
 async function loadApp() {
     try {
         const user = await api.me();
+        window.MY_USER_ID = user.id;
         showScreen('app-screen');
         document.getElementById('user-email').textContent = user.email;
         initNavigation();

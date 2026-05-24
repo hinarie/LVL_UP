@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import uuid
 import secrets
+import json
 
 from app.database import get_db
 from app.models.user import User
@@ -22,6 +23,10 @@ from app.core.deps import get_current_user
 from app.services.xp_service import award_xp
 
 router = APIRouter(prefix="/challenges", tags=["challenges"])
+
+# Через сколько дней после завершения ивент полностью удаляется из БД.
+# Кросс-посты в глобальной ленте при этом сохраняются (с пометкой названия ивента).
+ARCHIVE_DELETE_DAYS = 30
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -332,6 +337,7 @@ async def get_challenge_detail(
         comments_by_post.setdefault(str(c.post_id), []).append({
             "id": str(c.id),
             "content": c.content,
+            "user_id": str(c.user_id),
             "author_name": comments_chars.get(str(c.user_id), "Герой"),
             "created_at": c.created_at.isoformat(),
         })
@@ -727,6 +733,12 @@ async def create_post(
     if not participant:
         raise HTTPException(403, "Только участники могут писать в ленту ивента")
 
+    ch = await _get_challenge(db, challenge_id)
+    if not ch:
+        raise HTTPException(404, "Ивент не найден")
+    if ch.status == ChallengeStatus.finished:
+        raise HTTPException(403, "Ивент завершён — ленту можно только просматривать")
+
     post = ChallengePost(
         id=uuid.uuid4(),
         challenge_id=challenge_id,
@@ -745,6 +757,7 @@ async def create_post(
             content=data.content,
             visibility=PostVisibility.public,
             is_auto_generated=False,
+            auto_event_data=json.dumps({"challenge_title": ch.title}),
         )
         db.add(global_post)
         post.cross_posted  = True
@@ -766,6 +779,12 @@ async def toggle_reaction(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    ch = await _get_challenge(db, challenge_id)
+    if not ch:
+        raise HTTPException(404, "Ивент не найден")
+    if ch.status == ChallengeStatus.finished:
+        raise HTTPException(403, "Ивент завершён — реакции недоступны")
+
     existing = await db.execute(
         select(ChallengePostReaction).where(
             ChallengePostReaction.post_id == post_id,
@@ -813,6 +832,12 @@ async def add_comment(
     if not participant:
         raise HTTPException(403, "Только участники могут комментировать")
 
+    ch = await _get_challenge(db, challenge_id)
+    if not ch:
+        raise HTTPException(404, "Ивент не найден")
+    if ch.status == ChallengeStatus.finished:
+        raise HTTPException(403, "Ивент завершён — комментарии можно только просматривать")
+
     char = await _get_character(db, current_user.id)
     comment = ChallengePostComment(
         id=uuid.uuid4(),
@@ -826,9 +851,77 @@ async def add_comment(
     return {
         "id": str(comment.id),
         "content": comment.content,
+        "user_id": str(comment.user_id),
         "author_name": char.character_name if char else "Герой",
         "created_at": comment.created_at.isoformat(),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Delete post / comment (only own content)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.delete("/{challenge_id}/posts/{post_id}")
+async def delete_post(
+    challenge_id: str,
+    post_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Удалить свой пост в ленте ивента (вместе с комментариями, реакциями
+    и связанным кросс-постом в глобальной ленте)."""
+    from app.models.challenges import ChallengePostComment
+
+    res = await db.execute(select(ChallengePost).where(ChallengePost.id == post_id))
+    post = res.scalar_one_or_none()
+    if not post or str(post.challenge_id) != str(challenge_id):
+        raise HTTPException(404, "Пост не найден")
+    if str(post.user_id) != str(current_user.id):
+        raise HTTPException(403, "Можно удалять только свои посты")
+
+    # Удаляем кросс-пост в глобальной ленте, если был
+    if post.cross_post_id:
+        gp_res = await db.execute(select(Post).where(Post.id == post.cross_post_id))
+        gp = gp_res.scalar_one_or_none()
+        if gp:
+            await db.delete(gp)  # PostReaction удалится каскадом
+
+    # Удаляем комментарии (у них нет каскада на пост — чистим явно)
+    await db.execute(
+        ChallengePostComment.__table__.delete().where(
+            ChallengePostComment.post_id == post_id
+        )
+    )
+
+    # Сам пост (реакции уйдут каскадом)
+    await db.delete(post)
+    await db.commit()
+    return {"deleted": True, "id": str(post_id)}
+
+
+@router.delete("/{challenge_id}/posts/{post_id}/comments/{comment_id}")
+async def delete_comment(
+    challenge_id: str,
+    post_id: str,
+    comment_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Удалить свой комментарий."""
+    from app.models.challenges import ChallengePostComment
+
+    res = await db.execute(
+        select(ChallengePostComment).where(ChallengePostComment.id == comment_id)
+    )
+    comment = res.scalar_one_or_none()
+    if not comment or str(comment.post_id) != str(post_id):
+        raise HTTPException(404, "Комментарий не найден")
+    if str(comment.user_id) != str(current_user.id):
+        raise HTTPException(403, "Можно удалять только свои комментарии")
+
+    await db.delete(comment)
+    await db.commit()
+    return {"deleted": True, "id": str(comment_id)}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -885,20 +978,32 @@ async def finish_challenge(
     if participants:
         winner_char = await _get_character(db, participants[0].user_id)
         winner_name = winner_char.character_name if winner_char else "Победитель"
+        win_content = f"🏆 {winner_name} победил в ивенте «{ch.title}»!"
+
+        # Реальный кросс-пост в глобальную ленту, чтобы запись была видна в
+        # профиле/ленте, а не только помечена флагом (раньше social.Post не создавался).
+        global_win = Post(
+            id=uuid.uuid4(),
+            user_id=participants[0].user_id,
+            content=win_content,
+            visibility=PostVisibility.public,
+            is_auto_generated=True,
+            auto_event_type="challenge_win",
+            auto_event_data=json.dumps({"challenge_title": ch.title}),
+        )
+        db.add(global_win)
+
         auto = ChallengePost(
             id=uuid.uuid4(),
             challenge_id=challenge_id,
             user_id=participants[0].user_id,
-            content=f"🏆 {winner_name} победил в ивенте «{ch.title}»!",
+            content=win_content,
             is_auto_generated=True,
             auto_event_type="winner",
             cross_posted=True,
+            cross_post_id=global_win.id,
         )
         db.add(auto)
-        # TODO (раздел «Лента»): здесь cross_posted=True, но в глобальную social.Post
-        # запись НЕ создаётся (в отличие от create_post). Из-за этого авто-пост победителя
-        # помечен как кросс-постнутый, но в глобальной ленте его нет. При доработке Ленты
-        # нужно либо создавать здесь social.Post и проставлять cross_post_id, либо снять флаг.
 
     await db.commit()
     return {"message": "Ивент завершён! Призы выданы.", "results": results}
@@ -913,7 +1018,8 @@ async def tick_challenge_statuses(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Переводит upcoming→active и active→finished по времени."""
+    """Переводит upcoming→active и active→finished по времени,
+    а также удаляет давно завершённые ивенты (старше ARCHIVE_DELETE_DAYS)."""
     now = datetime.utcnow()
     result = await db.execute(select(Challenge))
     challenges = result.scalars().all()
@@ -927,5 +1033,46 @@ async def tick_challenge_statuses(
             ch.status = ChallengeStatus.finished
             updated.append(str(ch.id))
 
+    # Очистка старого архива: ивенты, завершённые больше месяца назад, удаляются
+    # целиком (задачи, выполнения, участники, локальная лента ивента — каскадом).
+    # Кросс-посты в глобальной ленте остаются: у них нет FK на ивент, а название
+    # ивента уже сохранено в auto_event_data, поэтому в профиле будет пометка.
+    deleted = []
+    cutoff = now - timedelta(days=ARCHIVE_DELETE_DAYS)
+    old_result = await db.execute(
+        select(Challenge).where(
+            Challenge.status == ChallengeStatus.finished,
+            Challenge.ends_at <= cutoff,
+        )
+    )
+    old_challenges = old_result.scalars().all()
+    for ch in old_challenges:
+        await _purge_challenge(db, ch)
+        deleted.append(str(ch.id))
+
     await db.commit()
-    return {"updated": updated}
+    return {"updated": updated, "deleted": deleted}
+
+
+async def _purge_challenge(db, ch: Challenge):
+    """Полностью удаляет ивент. Комментарии к постам ивента не имеют каскада —
+    чистим их явно. Кросс-посты в глобальной ленте НЕ трогаем (они уже помечены
+    названием ивента в auto_event_data и остаются в профиле пользователя)."""
+    from app.models.challenges import ChallengePostComment
+
+    # ID постов этого ивента
+    posts_res = await db.execute(
+        select(ChallengePost.id).where(ChallengePost.challenge_id == ch.id)
+    )
+    post_ids = [row[0] for row in posts_res.all()]
+
+    if post_ids:
+        await db.execute(
+            ChallengePostComment.__table__.delete().where(
+                ChallengePostComment.post_id.in_(post_ids)
+            )
+        )
+
+    # Сам ивент — задачи, выполнения, участники, посты ивента и их реакции
+    # уйдут каскадом (cascade="all, delete-orphan" в моделях).
+    await db.delete(ch)

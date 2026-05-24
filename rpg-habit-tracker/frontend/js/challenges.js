@@ -41,13 +41,18 @@ function initChallenges() {
 
 async function loadChallenges() {
     try {
+        // При (пере)входе в раздел на мобиле всегда стартуем со списка
+        document.getElementById('page-challenges')?.setAttribute('data-mobile-view', 'list');
         allChallenges = await api.request('GET', '/challenges/', null, true);
         renderCatalog();
         if (currentChallenge) {
             refreshLivePanel(currentChallenge.challenge.id);
         } else if (allChallenges.length > 0) {
-            // Автооткрываем первый ивент — убираем пустой стейт "выбери слева"
-            openLivePanel(allChallenges[0].id);
+            // Автооткрываем первый НЕзавершённый ивент. Завершённые идут в архив
+            // в конце каталога — не стоит показывать их первыми в живой панели.
+            const first = allChallenges.find(c => c.status !== 'finished')
+                       ?? allChallenges[0];
+            openLivePanel(first.id);
         }
     } catch (e) {
         console.error('loadChallenges:', e);
@@ -68,6 +73,12 @@ async function refreshLivePanel(challengeId) {
 // ──────────────────────────────────────────────────────────────
 
 function renderCatalog() {
+    // По умолчанию на мобиле показываем список (если пользователь не открыл детали)
+    const page = document.getElementById('page-challenges');
+    if (page && !page.hasAttribute('data-mobile-view')) {
+        page.setAttribute('data-mobile-view', 'list');
+    }
+
     const active   = allChallenges.filter(c => c.status !== 'finished');
     const archived = allChallenges.filter(c => c.status === 'finished');
     const joined   = active.filter(c => c.joined);
@@ -91,7 +102,10 @@ function renderCatalog() {
     if (archived.length > 0) {
         archiveSection.style.display = '';
         if (archiveCount) archiveCount.textContent = archived.length;
-        if (archiveList && archiveList.innerHTML === '') {
+        // Перерисовываем всегда — иначе только что завершившийся ивент
+        // не попадёт в архив до перезагрузки страницы.
+        if (archiveList) {
+            archiveList.innerHTML = '';
             archived.forEach(c => archiveList.appendChild(makeCatalogCard(c)));
         }
     } else {
@@ -209,20 +223,47 @@ async function openLivePanel(challengeId, userInitiated = false) {
         document.getElementById('lp-tab-tasks')?.classList.add('active');
         activeLiveTab = 'tasks';
 
-        // На узких экранах список и панель идут в одну колонку. Когда пользователь
-        // сам тапнул карточку — плавно подкручиваем к деталям ивента, чтобы не
-        // пришлось скроллить вручную. На автооткрытии при загрузке не дёргаем.
+        // На узких экранах используем мастер-деталь: список и детали — это два
+        // отдельных «экрана». Тап по карточке открывает детали на весь экран
+        // с кнопкой «Назад». На десктопе атрибут игнорируется (две колонки).
         if (userInitiated && window.matchMedia('(max-width: 900px)').matches) {
-            const panel = document.getElementById('ch-live-panel');
-            if (panel) {
-                requestAnimationFrame(() =>
-                    panel.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                );
-            }
+            showLiveDetailMobile();
         }
     } catch (e) {
         showToast('Не удалось загрузить ивент', true);
     }
+}
+
+// ── Мобильный мастер-деталь: переключение список ⇄ детали ──────
+function showLiveDetailMobile() {
+    const page = document.getElementById('page-challenges');
+    if (page) page.setAttribute('data-mobile-view', 'detail');
+    ensureLiveBackBar();
+    // Прокрутка к верху деталей
+    requestAnimationFrame(() => {
+        document.getElementById('ch-live-panel')?.scrollIntoView({ block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
+    });
+}
+
+function showCatalogMobile() {
+    const page = document.getElementById('page-challenges');
+    if (page) page.setAttribute('data-mobile-view', 'list');
+    // Снимаем подсветку — мы снова в списке
+    document.querySelectorAll('.challenge-card.active').forEach(c => c.classList.remove('active'));
+}
+
+// Вставляем кнопку «Назад» в шапку живой панели один раз (без правки HTML-партиала)
+function ensureLiveBackBar() {
+    const content = document.getElementById('ch-live-content');
+    if (!content || document.getElementById('ch-live-back')) return;
+    const bar = document.createElement('button');
+    bar.id = 'ch-live-back';
+    bar.className = 'ch-live-back';
+    bar.type = 'button';
+    bar.innerHTML = '<span class="ch-live-back-arrow">←</span> К списку ивентов';
+    bar.onclick = showCatalogMobile;
+    content.insertBefore(bar, content.firstChild);
 }
 
 function renderLivePanel(data) {
@@ -291,8 +332,10 @@ function renderLivePanel(data) {
     if (finishWrap) finishWrap.style.display = (is_creator && challenge.status !== 'finished') ? '' : 'none';
 
     // Лента
-    document.getElementById('lp-post-form').style.display = is_joined ? '' : 'none';
-    renderLiveFeed(posts);
+    const isFinished = challenge.status === 'finished';
+    // В завершённом ивенте писать нельзя — только просмотр
+    document.getElementById('lp-post-form').style.display = (is_joined && !isFinished) ? '' : 'none';
+    renderLiveFeed(posts, isFinished);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -536,44 +579,54 @@ async function finishChallenge() {
 // Лента + комментарии
 // ──────────────────────────────────────────────────────────────
 
-function renderLiveFeed(posts) {
+function renderLiveFeed(posts, isFinished = false) {
     const list = document.getElementById('lp-feed-list');
     list.innerHTML = '';
     if (!posts || posts.length === 0) {
         list.innerHTML = '<div class="ch-empty"><p>Лента пуста — поделись прогрессом!</p></div>';
         return;
     }
-    posts.forEach(post => list.appendChild(makeChallengePostCard(post)));
+    posts.forEach(post => list.appendChild(makeChallengePostCard(post, isFinished)));
 }
 
 const EMOJI_MAP = { fire: '🔥', muscle: '💪', star: '⭐', like: '👍' };
 
-function makeChallengePostCard(post) {
+// Свой ли это контент (для кнопок удаления)
+function chIsMine(userId) {
+    return userId && window.MY_USER_ID && String(userId) === String(window.MY_USER_ID);
+}
+
+function makeChallengePostCard(post, isFinished = false) {
     const card = document.createElement('div');
     card.className = `lp-post ${post.is_auto_generated ? 'auto-post' : ''}`;
     card.id = `lp-post-${post.id}`;
 
-    // Реакции — только одна активная
+    // Реакции — только одна активная. В завершённом ивенте только для вида (не кликаются).
     const myReaction = post.my_reactions && post.my_reactions.length > 0 ? post.my_reactions[0] : null;
     const reactionsHtml = Object.entries(EMOJI_MAP).map(([key, emoji]) => {
         const count  = (post.reactions && post.reactions[key]) || 0;
         const active = myReaction === key;
-        return `<button class="lp-reaction ${active ? 'active' : ''}"
-            data-emoji="${key}"
-            onclick="toggleReaction('${post.id}','${key}',this)">
+        // В завершённом ивенте показываем только реакции, у которых есть счётчик,
+        // и без обработчика клика (просмотр).
+        if (isFinished && count === 0) return '';
+        const onClick = isFinished ? '' : `onclick="toggleReaction('${post.id}','${key}',this)"`;
+        return `<button class="lp-reaction ${active ? 'active' : ''} ${isFinished ? 'lp-reaction-readonly' : ''}"
+            data-emoji="${key}" ${onClick}>
             ${emoji}${count > 0 ? ` ${count}` : ''}
         </button>`;
     }).join('');
 
-    // Комментарии
+    // Комментарии (+ кнопка удаления своих)
     const comments = post.comments || [];
     const commentsHtml = comments.map(c => `
-        <div class="lp-comment">
+        <div class="lp-comment" id="lp-comment-${c.id}">
             <div class="lp-comment-avatar">${(c.author_name || '?')[0].toUpperCase()}</div>
             <div class="lp-comment-body">
                 <div class="lp-comment-head">
                     <span class="lp-comment-author">${c.author_name || 'Герой'}</span>
                     ${c.created_at ? `<span class="lp-comment-time">${fmtRelTime(c.created_at)}</span>` : ''}
+                    ${chIsMine(c.user_id) ? `<button class="lp-comment-del" title="Удалить"
+                        onclick="deleteComment('${post.id}','${c.id}')">✕</button>` : ''}
                 </div>
                 <div class="lp-comment-text">${chEscapeHtml(c.content)}</div>
             </div>
@@ -581,6 +634,19 @@ function makeChallengePostCard(post) {
 
     const commentCount = comments.length;
     const commentLabel = commentCount > 0 ? `Комментарии (${commentCount})` : 'Комментировать';
+
+    // Кнопка удаления своего поста (авто-посты не удаляем)
+    const deletePostBtn = (chIsMine(post.author.user_id) && !post.is_auto_generated)
+        ? `<button class="lp-post-del" title="Удалить пост" onclick="deletePost('${post.id}')">🗑</button>`
+        : '';
+
+    // Форма комментария скрыта в завершённом ивенте
+    const commentFormHtml = isFinished ? '' : `
+        <div class="lp-comment-form">
+            <input class="lp-comment-input" id="lp-comment-input-${post.id}"
+                placeholder="Комментарий..." maxlength="200">
+            <button class="btn-comment-send" onclick="sendComment('${post.id}')">↑</button>
+        </div>`;
 
     card.innerHTML = `
         <div class="lp-post-header">
@@ -590,6 +656,7 @@ function makeChallengePostCard(post) {
                 <div class="lp-post-author-meta">Lvl ${post.author.level} · ${fmtRelTime(post.created_at)}</div>
             </div>
             ${post.cross_posted ? '<span style="font-size:12px;color:var(--text-muted)" title="В глобальной ленте">🌍</span>' : ''}
+            ${deletePostBtn}
         </div>
         <div class="lp-post-content">${chEscapeHtml(post.content)}</div>
         <div class="lp-post-footer-row">
@@ -602,13 +669,36 @@ function makeChallengePostCard(post) {
             <div class="lp-comments-list" id="lp-comments-list-${post.id}">
                 ${commentsHtml}
             </div>
-            <div class="lp-comment-form">
-                <input class="lp-comment-input" id="lp-comment-input-${post.id}"
-                    placeholder="Комментарий..." maxlength="200">
-                <button class="btn-comment-send" onclick="sendComment('${post.id}')">↑</button>
-            </div>
+            ${commentFormHtml}
         </div>`;
     return card;
+}
+
+// ── Удаление поста / комментария (только свои) ────────────────
+async function deletePost(postId) {
+    if (!confirm('Удалить пост? Это действие необратимо.')) return;
+    try {
+        await api.request('DELETE',
+            `/challenges/${currentChallenge.challenge.id}/posts/${postId}`, null, true);
+        document.getElementById(`lp-post-${postId}`)?.remove();
+        showToast('Пост удалён');
+    } catch (e) { showToast(e.message, true); }
+}
+
+async function deleteComment(postId, commentId) {
+    if (!confirm('Удалить комментарий?')) return;
+    try {
+        await api.request('DELETE',
+            `/challenges/${currentChallenge.challenge.id}/posts/${postId}/comments/${commentId}`,
+            null, true);
+        document.getElementById(`lp-comment-${commentId}`)?.remove();
+        // Обновляем счётчик в кнопке
+        const listEl = document.getElementById(`lp-comments-list-${postId}`);
+        const cur = listEl ? listEl.querySelectorAll('.lp-comment').length : 0;
+        const btn = document.querySelector(`#lp-post-${postId} .btn-toggle-comments`);
+        if (btn) btn.innerHTML = `💬 ${cur > 0 ? `Комментарии (${cur})` : 'Комментировать'}`;
+        showToast('Комментарий удалён');
+    } catch (e) { showToast(e.message, true); }
 }
 
 async function toggleReaction(postId, emoji, btn) {
@@ -661,12 +751,15 @@ async function sendComment(postId) {
         const commentForm = commentsEl?.querySelector('.lp-comment-form');
         const commentEl = document.createElement('div');
         commentEl.className = 'lp-comment';
+        commentEl.id = `lp-comment-${res.id}`;
         commentEl.innerHTML = `
             <div class="lp-comment-avatar">${(res.author_name || '?')[0].toUpperCase()}</div>
             <div class="lp-comment-body">
                 <div class="lp-comment-head">
                     <span class="lp-comment-author">${res.author_name || 'Герой'}</span>
                     <span class="lp-comment-time">${fmtRelTime(res.created_at || new Date().toISOString())}</span>
+                    <button class="lp-comment-del" title="Удалить"
+                        onclick="deleteComment('${postId}','${res.id}')">✕</button>
                 </div>
                 <div class="lp-comment-text">${chEscapeHtml(res.content)}</div>
             </div>`;
