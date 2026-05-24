@@ -57,6 +57,7 @@ class Post(Base):
 
     user = relationship("User", back_populates="posts")
     reactions = relationship("PostReaction", back_populates="post", cascade="all, delete-orphan")
+    comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan")
 
 
 class PostReaction(Base):
@@ -70,6 +71,20 @@ class PostReaction(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     post = relationship("Post", back_populates="reactions")
+
+
+class PostComment(Base):
+    """Комментарий под постом глобальной ленты."""
+    __tablename__ = "post_comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    post_id = Column(UUID(as_uuid=True), ForeignKey("posts.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    content = Column(Text, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    post = relationship("Post", back_populates="comments")
 
 
 class MotivationalPing(Base):

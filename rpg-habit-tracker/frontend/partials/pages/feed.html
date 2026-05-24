@@ -1,49 +1,100 @@
 <div id="page-feed" class="page">
-    <div class="feed-layout">
-        <aside class="feed-sidebar">
-            <div class="feed-card">
-                <div class="feed-card-title">✍️ Написать пост</div>
-                <textarea id="post-content" class="post-textarea"
-                    placeholder="Поделись своим прогрессом..." rows="3" maxlength="500"></textarea>
-                <div class="post-footer">
-                    <select id="post-visibility" class="post-vis-select">
-                        <option value="public">🌍 Публично</option>
-                        <option value="friends">👥 Друзья</option>
-                        <option value="private">🔒 Только я</option>
-                    </select>
-                    <button class="btn-post" id="submit-post">Опубликовать</button>
-                </div>
-            </div>
-            <div class="feed-card" id="friend-requests-card" style="display:none">
-                <div class="feed-card-title">👋 Запросы в друзья</div>
-                <div id="friend-requests-list"></div>
-            </div>
-            <div class="feed-card">
-                <div class="feed-card-title">➕ Добавить друга</div>
+    <div class="feed-grid">
+
+        <!-- ЛЕВЫЙ РЕЙЛ (десктоп): друзья -->
+        <aside class="feed-rail feed-rail-left">
+            <div class="rail-section">
+                <div class="rail-title">Добавить друга</div>
                 <div class="add-friend-row">
                     <input id="friend-email" type="email" class="friend-input" placeholder="email@example.com">
-                    <button class="btn-add-friend" id="send-friend-request">Добавить</button>
+                    <button class="btn-add-friend" id="send-friend-request">+</button>
                 </div>
                 <div class="error-msg" id="friend-error"></div>
             </div>
-            <div class="feed-card">
-                <div class="feed-card-title">👥 Мои друзья</div>
-                <div id="friends-list" class="friends-list">
-                    <div class="friends-empty">Пока нет друзей</div>
-                </div>
+            <div class="rail-section" id="rail-friends">
+                <div class="rail-title">Мои друзья</div>
+                <div id="friends-list-rail" class="friends-list"></div>
             </div>
         </aside>
-        <main class="feed-main">
-            <div class="feed-header">
-                <h2 class="tasks-title">🌐 Лента</h2>
-                <button class="btn-refresh" id="refresh-feed">↻ Обновить</button>
-            </div>
-            <div id="posts-list" class="posts-list">
-                <div class="tasks-empty">
-                    <div class="empty-icon">📰</div>
-                    <p>Лента пуста.<br>Напиши первый пост!</p>
+
+        <!-- ЦЕНТР: лента -->
+        <div class="feed-shell">
+            <header class="feed-top">
+                <div class="feed-top-row">
+                    <h2 class="feed-logo">Лента</h2>
+                    <button class="feed-refresh" id="refresh-feed" title="Обновить">↻</button>
                 </div>
+                <!-- Табы видны только на мобиле; на десктопе друзья в рейлах -->
+                <div class="feed-tabs" id="feed-tabs">
+                    <button class="feed-tab active" data-feed-tab="feed">Лента</button>
+                    <button class="feed-tab" data-feed-tab="friends">
+                        Друзья <span class="feed-tab-badge" id="friends-tab-badge" style="display:none">0</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ВКЛАДКА ЛЕНТА -->
+            <section class="feed-pane active" id="feed-pane-feed">
+                <div class="composer" id="composer">
+                    <div class="composer-avatar" id="composer-avatar">🧑</div>
+                    <div class="composer-body">
+                        <textarea id="post-content" class="composer-input"
+                            placeholder="Что нового? Поделись прогрессом…" rows="1" maxlength="500"></textarea>
+                        <div class="composer-actions" id="composer-actions">
+                            <select id="post-visibility" class="composer-vis">
+                                <option value="public">🌍 Публично</option>
+                                <option value="friends">👥 Друзья</option>
+                                <option value="private">🔒 Только я</option>
+                            </select>
+                            <span class="composer-count" id="composer-count">0/500</span>
+                            <button class="composer-submit" id="submit-post">Опубликовать</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="posts-list" class="posts-list">
+                    <div class="feed-empty">
+                        <div class="feed-empty-icon">📰</div>
+                        <p>Лента пуста.<br>Напиши первый пост!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ВКЛАДКА ДРУЗЬЯ (только мобилка) -->
+            <section class="feed-pane" id="feed-pane-friends">
+                <div class="friends-block">
+                    <div class="friends-block-title">Добавить друга</div>
+                    <div class="add-friend-row">
+                        <input id="friend-email-m" type="email" class="friend-input" placeholder="email@example.com">
+                        <button class="btn-add-friend" id="send-friend-request-m">Добавить</button>
+                    </div>
+                    <div class="error-msg" id="friend-error-m"></div>
+                </div>
+                <div class="friends-block" id="friend-requests-card-m" style="display:none">
+                    <div class="friends-block-title">Запросы в друзья</div>
+                    <div id="friend-requests-list-m"></div>
+                </div>
+                <div class="friends-block">
+                    <div class="friends-block-title">Мои друзья</div>
+                    <div id="friends-list" class="friends-list">
+                        <div class="friends-empty">Пока нет друзей</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ПРАВЫЙ РЕЙЛ (десктоп): запросы в друзья -->
+        <aside class="feed-rail feed-rail-right">
+            <div class="rail-section" id="friend-requests-card" style="display:none">
+                <div class="rail-title">Запросы в друзья</div>
+                <div id="friend-requests-list"></div>
             </div>
-        </main>
+            <div class="rail-section rail-tip">
+                <div class="rail-tip-emoji">🏆</div>
+                <div class="rail-tip-text">Делись прогрессом, лайкай друзей и поднимайся в рейтинге ивентов!</div>
+            </div>
+        </aside>
+
     </div>
+
+    <button class="feed-fab" id="feed-fab" title="Новый пост">✎</button>
 </div>
