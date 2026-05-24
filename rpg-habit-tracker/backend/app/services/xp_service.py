@@ -103,6 +103,18 @@ async def award_xp(
     leveled_up = character.level > prev_level
     new_rank = character.rank.value if character.rank != prev_rank else None
 
+    # Уведомления о прогрессии (НЕ блокирующие — service сам ловит исключения)
+    if leveled_up or new_rank:
+        from app.services import notification_service as notif_svc
+        if leveled_up:
+            await notif_svc.notify_level_up(
+                db, user_id=character.user_id, new_level=character.level
+            )
+        if new_rank:
+            await notif_svc.notify_rank_up(
+                db, user_id=character.user_id, new_rank=new_rank
+            )
+
     # Логируем транзакцию XP
     xp_tx = XPTransaction(
         id=uuid.uuid4(),

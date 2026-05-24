@@ -11,6 +11,7 @@ from app.models.challenges import ChallengePost
 from app.models.character import Character
 from app.schemas.social import PostCreate, FriendRequestCreate
 from app.core.deps import get_current_user
+from app.services import notification_service as notif_svc
 
 router = APIRouter(prefix="/social", tags=["social"])
 
@@ -28,6 +29,15 @@ def char_to_dict(char: Character, user: User = None) -> dict:
         "active_frame": char.active_frame,
         "current_streak": char.current_streak,
     }
+
+
+async def _actor_name(db: AsyncSession, user: User) -> str:
+    """Имя инициатора события для текста уведомления (display_name или username)."""
+    ch_res = await db.execute(select(Character).where(Character.user_id == user.id))
+    ch = ch_res.scalar_one_or_none()
+    if ch and ch.display_name:
+        return ch.display_name
+    return user.username or "Герой"
 
 
 def post_to_dict(post: Post, author_char: Character, my_reaction=None,
@@ -193,11 +203,13 @@ async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
     reaction = existing.scalar_one_or_none()
 
     my_reaction = None
+    became_like = False  # ставим уведомление автору только когда лайк ПОЯВИЛСЯ
     if reaction is None:
         db.add(PostReaction(
             id=uuid.uuid4(), post_id=post_id, user_id=user_id, reaction_type=rtype,
         ))
         my_reaction = rtype
+        became_like = (rtype == "like")
     elif reaction.reaction_type == rtype:
         # тот же тип → снимаем
         await db.delete(reaction)
@@ -206,6 +218,26 @@ async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
         # переключаем like<->dislike
         reaction.reaction_type = rtype
         my_reaction = rtype
+        became_like = (rtype == "like")
+
+    # Уведомление автору поста — только при первом появлении лайка
+    if became_like:
+        post_res = await db.execute(select(Post).where(Post.id == post_id))
+        post = post_res.scalar_one_or_none()
+        if post and str(post.user_id) != str(user_id):
+            liker_res = await db.execute(select(User).where(User.id == user_id))
+            liker = liker_res.scalar_one_or_none()
+            if liker:
+                liker_name = await _actor_name(db, liker)
+                await notif_svc.notify_post_liked(
+                    db,
+                    post_owner_id=post.user_id,
+                    liker_id=user_id,
+                    liker_username=liker.username,
+                    liker_name=liker_name,
+                    post_id=post_id,
+                    post_preview=(post.content or "")[:80],
+                )
 
     await db.commit()
 
@@ -321,7 +353,8 @@ async def add_comment(
         raise HTTPException(400, "Комментарий от 1 до 300 символов")
 
     post_res = await db.execute(select(Post).where(Post.id == post_id))
-    if not post_res.scalar_one_or_none():
+    post = post_res.scalar_one_or_none()
+    if not post:
         raise HTTPException(404, "Пост не найден")
 
     comment = PostComment(
@@ -331,6 +364,20 @@ async def add_comment(
         content=content,
     )
     db.add(comment)
+
+    # Уведомление автору поста (если автор не сам себе комментит)
+    if str(post.user_id) != str(current_user.id):
+        commenter_name = await _actor_name(db, current_user)
+        await notif_svc.notify_post_commented(
+            db,
+            post_owner_id=post.user_id,
+            commenter_id=current_user.id,
+            commenter_username=current_user.username,
+            commenter_name=commenter_name,
+            post_id=post_id,
+            comment_preview=content,
+        )
+
     await db.commit()
     await db.refresh(comment)
 
@@ -418,6 +465,17 @@ async def send_friend_request(
         status=FriendshipStatus.pending,
     )
     db.add(friendship)
+
+    # Уведомление получателю запроса
+    sender_name = await _actor_name(db, current_user)
+    await notif_svc.notify_friend_request(
+        db,
+        receiver_id=target.id,
+        sender_id=current_user.id,
+        sender_username=current_user.username,
+        sender_name=sender_name,
+    )
+
     await db.commit()
     label = username or email
     return {"message": f"Запрос отправлен пользователю {label}"}
@@ -538,6 +596,17 @@ async def accept_friend(
     if not friendship:
         raise HTTPException(status_code=404, detail="Запрос не найден")
     friendship.status = FriendshipStatus.accepted
+
+    # Уведомление инициатору запроса — «твой запрос приняли»
+    accepter_name = await _actor_name(db, current_user)
+    await notif_svc.notify_friend_accepted(
+        db,
+        receiver_id=friendship.requester_id,
+        accepter_id=current_user.id,
+        accepter_username=current_user.username,
+        accepter_name=accepter_name,
+    )
+
     await db.commit()
     return {"message": "Запрос принят! Теперь вы друзья 🎉"}
 
@@ -607,6 +676,17 @@ async def send_ping(
         message="Ты справишься! 💪",
     )
     db.add(ping)
+
+    sender_name = await _actor_name(db, current_user)
+    await notif_svc.notify_ping(
+        db,
+        receiver_id=user_id,
+        sender_id=current_user.id,
+        sender_username=current_user.username,
+        sender_name=sender_name,
+        message="Ты справишься! 💪",
+    )
+
     await db.commit()
     return {"message": "Мотивационный пинг отправлен! 💪"}
 

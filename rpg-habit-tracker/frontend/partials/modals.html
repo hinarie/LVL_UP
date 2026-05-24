@@ -334,3 +334,20 @@
         </div>
     </div>
 </div>
+
+<!-- Дропдаун уведомлений (заполняется из JS) -->
+<div id="notif-dropdown" class="notif-dropdown" style="display:none" role="dialog" aria-label="Уведомления">
+    <div class="notif-head">
+        <div class="notif-title">Уведомления</div>
+        <div class="notif-head-actions">
+            <button class="notif-act-link" id="notif-mark-all">Прочитать все</button>
+            <button class="notif-act-link notif-act-danger" id="notif-clear-all">Очистить</button>
+        </div>
+    </div>
+    <div id="notif-list" class="notif-list">
+        <div class="notif-empty">Загрузка…</div>
+    </div>
+</div>
+
+<!-- Фон для мобильной шторки -->
+<div id="notif-backdrop" class="notif-backdrop" style="display:none"></div>

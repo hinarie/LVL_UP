@@ -10,3 +10,4 @@ from app.models.challenges import Challenge, ChallengeParticipant
 from app.models.social import Friendship, Post, PostReaction, MotivationalPing
 from app.models.transactions import XPTransaction, CreditTransaction
 from app.models.username_change import UsernameChange
+from app.models.notification import Notification

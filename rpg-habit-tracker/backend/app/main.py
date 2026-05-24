@@ -6,7 +6,7 @@ from app.database import engine
 from app import models
 from app.routers import (
     auth, tasks, character, goals, habits, shop,
-    social, challenges, oauth, profile,
+    social, challenges, oauth, profile, notifications,
 )
 from app.services.shop_seed import seed_shop
 from app.database import AsyncSessionLocal
@@ -31,6 +31,7 @@ app.include_router(shop.router)
 app.include_router(social.router)
 app.include_router(challenges.router)
 app.include_router(profile.router)
+app.include_router(notifications.router)
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend"
 app.mount("/", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")

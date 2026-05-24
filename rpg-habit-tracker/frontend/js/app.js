@@ -15,6 +15,7 @@ async function loadApp() {
         await loadFriends();
         await loadProfile();
         initChallenges();
+        if (typeof initNotifications === 'function') initNotifications();
     } catch {
         api.clearToken();
         showScreen('auth-screen');
@@ -81,6 +82,7 @@ async function onPageShown(page) {
 }
 
 document.getElementById('logout-btn').addEventListener('click', () => {
+    if (typeof stopNotifPolling === 'function') stopNotifPolling();
     api.clearToken();
     showScreen('auth-screen');
 });

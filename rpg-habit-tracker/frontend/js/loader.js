@@ -57,6 +57,7 @@ async function initApp() {
             '/js/profile.js',
             '/js/user-profile.js',
             '/js/challenges.js',
+            '/js/notifications.js',
             '/js/app.js',
         ]);
 
