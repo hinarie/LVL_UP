@@ -624,7 +624,7 @@ async def get_public_profile(
     # Надетые предметы (для отображения «что носит»)
     equipped_res = await db.execute(
         select(InventoryItem, ShopItem)
-        .join(ShopItem, InventoryItem.item_id == ShopItem.id)
+        .join(ShopItem, InventoryItem.shop_item_id == ShopItem.id)
         .where(
             InventoryItem.user_id == uid,
             InventoryItem.is_equipped == True,  # noqa
@@ -633,10 +633,10 @@ async def get_public_profile(
     equipped = []
     for inv, item in equipped_res.all():
         equipped.append({
-            "category": item.category.value if hasattr(item.category, "value") else item.category,
-            "name":     item.name,
-            "rarity":   item.rarity.value if hasattr(item.rarity, "value") else item.rarity,
-            "icon":     getattr(item, "icon", None),
+            "category":  item.category.value if hasattr(item.category, "value") else item.category,
+            "name":      item.name,
+            "rarity":    item.rarity.value if hasattr(item.rarity, "value") else item.rarity,
+            "asset_key": item.asset_key,
         })
 
     # Достижения (тот же расчёт, что и у себя — но это публично, ок)

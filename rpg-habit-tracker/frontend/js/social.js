@@ -54,6 +54,20 @@ function avatarFor(level) {
     return RANK_AVATARS[Math.max(0, idx)];
 }
 
+// Возвращает HTML-содержимое аватара по avatar_url из профиля автора:
+// • http(s)-ссылка → <img>
+// • короткая строка (emoji) → сам emoji
+// • иначе → fallback emoji по уровню (avatarFor)
+function avatarContent(avatarUrl, level) {
+    if (avatarUrl && /^https?:\/\//.test(avatarUrl)) {
+        return `<img src="${escapeAttrSafe(avatarUrl)}" alt="" class="avatar-img">`;
+    }
+    if (avatarUrl && avatarUrl.length <= 4) {
+        return escapeHtml(avatarUrl);
+    }
+    return avatarFor(level);
+}
+
 // Достаём название ивента из auto_event_data (JSON), если есть
 function challengeTitleOf(post) {
     if (post.auto_event_data) {
@@ -99,7 +113,9 @@ function makePostCard(post) {
     const authorLevel = post.author?.level || 1;
     const authorRank  = post.author?.rank || 'Warrior';
     const isOwn = String(post.author_id) === String(getCurrentUserId());
-    const avatar = avatarFor(authorLevel);
+    // Аватар берём из профиля автора (avatar_url): либо картинка по ссылке,
+    // либо emoji. Если ничего не задано — fallback на emoji по уровню.
+    const avatar = avatarContent(post.author?.avatar_url, authorLevel);
 
     // Бейджи: авто-событие (level up / победа) или происхождение из ивента
     const chTitle = challengeTitleOf(post);
@@ -292,9 +308,10 @@ function makeCommentEl(postId, c) {
     const isMine = String(c.user_id) === String(getCurrentUserId());
     const commentName = c.author_display_name || c.author_name || 'Герой';
     const commentUsername = c.author_username || '';
+    const commentAvatar = avatarContent(c.author_avatar_url, c.author_level);
     const avatarHtml = commentUsername
-        ? `<div class="post-comment-avatar post-link" data-act="open-user" data-username="${escapeAttrSafe(commentUsername)}">${avatarFor(c.author_level)}</div>`
-        : `<div class="post-comment-avatar">${avatarFor(c.author_level)}</div>`;
+        ? `<div class="post-comment-avatar post-link" data-act="open-user" data-username="${escapeAttrSafe(commentUsername)}">${commentAvatar}</div>`
+        : `<div class="post-comment-avatar">${commentAvatar}</div>`;
     const nameHtml = commentUsername
         ? `<span class="post-comment-name post-link" data-act="open-user" data-username="${escapeAttrSafe(commentUsername)}">${escapeHtml(commentName)}</span>`
         : `<span class="post-comment-name">${escapeHtml(commentName)}</span>`;
@@ -397,7 +414,7 @@ function initComposer() {
 
     const avatar = document.getElementById('composer-avatar');
     if (avatar && typeof character !== 'undefined' && character) {
-        avatar.textContent = avatarFor(character.level);
+        avatar.innerHTML = avatarContent(character.avatar_url, character.level);
     }
 
     const autoGrow = () => {
@@ -565,7 +582,7 @@ function renderFriends() {
                 ? `data-act="open-user" data-username="${escapeAttrSafe(username)}" class="friend-clickable"`
                 : '';
             item.innerHTML = `
-                <div class="friend-avatar ${username ? 'post-link' : ''}" ${clickableAttrs}>${avatarFor(level)}</div>
+                <div class="friend-avatar ${username ? 'post-link' : ''}" ${clickableAttrs}>${avatarContent(f.character?.avatar_url, level)}</div>
                 <div class="friend-info ${username ? 'post-link' : ''}" ${clickableAttrs}>
                     <div class="friend-name">${escapeHtml(name)}</div>
                     <div class="friend-level">Lvl ${level} · ${f.character?.rank || 'Warrior'}${username ? ` · @${escapeHtml(username)}` : ''}</div>
@@ -628,9 +645,18 @@ document.getElementById('send-friend-request-m')?.addEventListener('click',
 // и работает для всех постов сразу (Лента, Профиль, чужой профиль).
 // ════════════════════════════════════════════════════════════════
 
+// Делегация навешивается на capture-фазе (третий аргумент `true`), чтобы
+// клики по элементам ленты обрабатывались раньше любых других обработчиков
+// на document (например, делегации ивентов в challenges.js, которая могла
+// перехватывать/глушить клик до того, как он доходил сюда).
+// Дополнительно требуем, чтобы цель находилась внутри карточки поста ленты
+// (.post) — так мы не вмешиваемся в посты ивентов с другой разметкой.
 document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-act]');
     if (!target) return;
+    // Обрабатываем только элементы внутри карточки поста ленты/профиля.
+    if (!target.closest('.post')) return;
+
     const act = target.dataset.act;
     const postId = target.dataset.postId;
     const commentId = target.dataset.commentId;
@@ -643,31 +669,37 @@ document.addEventListener('click', (e) => {
             break;
         case 'send-comment':
             e.preventDefault();
+            e.stopPropagation();
             sendComment(postId, target);
             break;
         case 'delete-comment':
             e.preventDefault();
+            e.stopPropagation();
             deleteFeedComment(postId, commentId, target);
             break;
         case 'react-like':
             e.preventDefault();
+            e.stopPropagation();
             reactPost(postId, 'like', target);
             break;
         case 'react-dislike':
             e.preventDefault();
+            e.stopPropagation();
             reactPost(postId, 'dislike', target);
             break;
         case 'delete-post':
             e.preventDefault();
+            e.stopPropagation();
             deletePost(postId);
             break;
         case 'open-user':
             e.preventDefault();
+            e.stopPropagation();
             const username = target.dataset.username;
             if (typeof openUserProfile === 'function') openUserProfile(username);
             break;
     }
-});
+}, true);
 
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
@@ -675,7 +707,7 @@ document.addEventListener('keydown', (e) => {
     if (!target) return;
     e.preventDefault();
     sendComment(target.dataset.postId, target);
-});
+}, true);
 
 // ════════════════════════════════════════════════════════════════
 // ПРОФИЛЬ — логика вынесена в profile.js. makePostCard, avatarFor,

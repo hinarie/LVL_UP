@@ -565,7 +565,13 @@ function renderLiveBoard(leaderboard, prize_preview) {
 
 async function finishChallenge() {
     if (!currentChallenge) return;
-    if (!confirm('Завершить ивент и выдать призы? Это нельзя отменить.')) return;
+    const ok = await confirmModal({
+        title: 'Завершить ивент?',
+        message: 'Призы будут выданы победителям. Это действие нельзя отменить.',
+        confirmText: 'Завершить',
+        danger: true,
+    });
+    if (!ok) return;
     try {
         const res = await api.request('POST', `/challenges/${currentChallenge.challenge.id}/finish`, null, true);
         showToast(res.message);
@@ -626,7 +632,7 @@ function makeChallengePostCard(post, isFinished = false) {
                     <span class="lp-comment-author">${c.author_name || 'Герой'}</span>
                     ${c.created_at ? `<span class="lp-comment-time">${fmtRelTime(c.created_at)}</span>` : ''}
                     ${chIsMine(c.user_id) ? `<button class="lp-comment-del" title="Удалить"
-                        onclick="deleteComment('${post.id}','${c.id}')">✕</button>` : ''}
+                        onclick="chDeleteComment('${post.id}','${c.id}')">✕</button>` : ''}
                 </div>
                 <div class="lp-comment-text">${chEscapeHtml(c.content)}</div>
             </div>
@@ -637,7 +643,7 @@ function makeChallengePostCard(post, isFinished = false) {
 
     // Кнопка удаления своего поста (авто-посты не удаляем)
     const deletePostBtn = (chIsMine(post.author.user_id) && !post.is_auto_generated)
-        ? `<button class="lp-post-del" title="Удалить пост" onclick="deletePost('${post.id}')">🗑</button>`
+        ? `<button class="lp-post-del" title="Удалить пост" onclick="chDeletePost('${post.id}')">🗑</button>`
         : '';
 
     // Форма комментария скрыта в завершённом ивенте
@@ -645,7 +651,7 @@ function makeChallengePostCard(post, isFinished = false) {
         <div class="lp-comment-form">
             <input class="lp-comment-input" id="lp-comment-input-${post.id}"
                 placeholder="Комментарий..." maxlength="200">
-            <button class="btn-comment-send" onclick="sendComment('${post.id}')">↑</button>
+            <button class="btn-comment-send" onclick="chSendComment('${post.id}')">↑</button>
         </div>`;
 
     card.innerHTML = `
@@ -661,7 +667,7 @@ function makeChallengePostCard(post, isFinished = false) {
         <div class="lp-post-content">${chEscapeHtml(post.content)}</div>
         <div class="lp-post-footer-row">
             <div class="lp-reactions">${reactionsHtml}</div>
-            <button class="btn-toggle-comments" onclick="toggleComments('${post.id}')">
+            <button class="btn-toggle-comments" onclick="chToggleComments('${post.id}')">
                 💬 ${commentLabel}
             </button>
         </div>
@@ -675,8 +681,14 @@ function makeChallengePostCard(post, isFinished = false) {
 }
 
 // ── Удаление поста / комментария (только свои) ────────────────
-async function deletePost(postId) {
-    if (!confirm('Удалить пост? Это действие необратимо.')) return;
+async function chDeletePost(postId) {
+    const ok = await confirmModal({
+        title: 'Удалить пост?',
+        message: 'Пост будет удалён без возможности восстановления.',
+        confirmText: 'Удалить',
+        danger: true,
+    });
+    if (!ok) return;
     try {
         await api.request('DELETE',
             `/challenges/${currentChallenge.challenge.id}/posts/${postId}`, null, true);
@@ -685,8 +697,14 @@ async function deletePost(postId) {
     } catch (e) { showToast(e.message, true); }
 }
 
-async function deleteComment(postId, commentId) {
-    if (!confirm('Удалить комментарий?')) return;
+async function chDeleteComment(postId, commentId) {
+    const ok = await confirmModal({
+        title: 'Удалить комментарий?',
+        message: 'Комментарий будет удалён без возможности восстановления.',
+        confirmText: 'Удалить',
+        danger: true,
+    });
+    if (!ok) return;
     try {
         await api.request('DELETE',
             `/challenges/${currentChallenge.challenge.id}/posts/${postId}/comments/${commentId}`,
@@ -733,13 +751,13 @@ async function toggleReaction(postId, emoji, btn) {
     }
 }
 
-function toggleComments(postId) {
+function chToggleComments(postId) {
     const el = document.getElementById(`lp-comments-${postId}`);
     if (!el) return;
     el.style.display = el.style.display === 'none' ? '' : 'none';
 }
 
-async function sendComment(postId) {
+async function chSendComment(postId) {
     if (!currentChallenge) return;
     const input = document.getElementById(`lp-comment-input-${postId}`);
     const content = input?.value?.trim();
@@ -759,7 +777,7 @@ async function sendComment(postId) {
                     <span class="lp-comment-author">${res.author_name || 'Герой'}</span>
                     <span class="lp-comment-time">${fmtRelTime(res.created_at || new Date().toISOString())}</span>
                     <button class="lp-comment-del" title="Удалить"
-                        onclick="deleteComment('${postId}','${res.id}')">✕</button>
+                        onclick="chDeleteComment('${postId}','${res.id}')">✕</button>
                 </div>
                 <div class="lp-comment-text">${chEscapeHtml(res.content)}</div>
             </div>`;

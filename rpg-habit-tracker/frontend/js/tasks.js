@@ -210,15 +210,6 @@ async function completeChallengeTask(taskId, challengeId, participantId) {
     } catch (e) { showToast(e.message, true); }
 }
 
-function showXpAnimation(amount) {
-    if (!amount) return;
-    const el = document.createElement('div');
-    el.className = 'xp-float';
-    el.textContent = `+${amount} XP`;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1600);
-}
-
 // Красивый диалог подтверждения вместо window.confirm
 function showConfirm(title, subtitle, confirmText = 'Удалить', confirmClass = 'btn-confirm-delete') {
     return new Promise(resolve => {
@@ -650,6 +641,7 @@ async function deleteTask(taskId) {
 
 // ===== АНИМАЦИЯ +XP =====
 function showXpAnimation(amount) {
+    if (!amount) return;
     const el = document.createElement('div');
     el.className = 'xp-popup';
     el.textContent = `+${amount} XP`;

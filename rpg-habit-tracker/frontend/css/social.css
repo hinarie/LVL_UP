@@ -628,3 +628,19 @@
     .profile-hero { flex-direction: column; text-align: center; gap: 14px; }
     .profile-stats { justify-content: center; }
 }
+
+/* ── Аватар-картинка (avatar_url из профиля) ──────────────────── */
+/* Контейнеры аватаров обрезают вложенную картинку по кругу. */
+.post-avatar,
+.post-comment-avatar,
+.composer-avatar,
+.friend-avatar { overflow: hidden; }
+
+/* Картинка заполняет круглый контейнер без искажений. */
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}

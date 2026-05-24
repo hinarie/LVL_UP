@@ -287,6 +287,7 @@ async def list_comments(
                 "name": ch.character_name,
                 "display_name": ch.display_name,
                 "level": ch.level,
+                "avatar_url": ch.avatar_url,
             }
         users_res = await db.execute(
             select(User).where(User.id.in_(author_ids))
@@ -303,6 +304,7 @@ async def list_comments(
         "author_display_name": info.get(str(c.user_id), {}).get("display_name", "Герой"),
         "author_username":     info.get(str(c.user_id), {}).get("username"),
         "author_level":        info.get(str(c.user_id), {}).get("level", 1),
+        "author_avatar_url":   info.get(str(c.user_id), {}).get("avatar_url"),
         "created_at": c.created_at,
     } for c in comments]
 
@@ -342,6 +344,7 @@ async def add_comment(
         "author_display_name": char.display_name if char else "Герой",
         "author_username":     current_user.username,
         "author_level":        char.level if char else 1,
+        "author_avatar_url":   char.avatar_url if char else None,
         "created_at": comment.created_at,
     }
 

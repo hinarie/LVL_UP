@@ -22,6 +22,27 @@ RANK_ORDER = [
 ]
 
 
+def _recalc_progress_from_total(character: Character):
+    """
+    Пересчитывает level / xp_current_level / age_display / rank из xp_total.
+    xp_total — единственный источник истины, поэтому после любого изменения
+    XP прогресс восстанавливается детерминированно. Используется и в award_xp,
+    и в deduct_xp, поэтому начисление и откат полностью симметричны:
+    уровень и ранг корректно повышаются и понижаются.
+    """
+    total = max(0, character.xp_total)
+
+    # Уровень начинается с 1; каждые XP_PER_LEVEL — +1 уровень
+    character.level = total // XP_PER_LEVEL + 1
+    character.xp_current_level = total % XP_PER_LEVEL
+    character.age_display = character.level
+
+    # Ранг: каждые XP_PER_RANK — следующий ранг (но не выше максимального)
+    earned_ranks = total // XP_PER_RANK
+    target_rank_index = min(earned_ranks, len(RANK_ORDER) - 1)
+    character.rank = RANK_ORDER[target_rank_index]
+
+
 async def award_xp(
     db: AsyncSession,
     character: Character,
@@ -56,7 +77,6 @@ async def award_xp(
     actual_xp = min(amount, remaining_cap)
     character.xp_earned_today += actual_xp
     character.xp_total += actual_xp
-    character.xp_current_level += actual_xp
 
     # Начисляем кредиты (10 XP = 1 кредит)
     credits_earned = actual_xp // 10
@@ -72,22 +92,16 @@ async def award_xp(
         )
         db.add(credit_tx)
 
-    # Проверяем повышение уровня
-    leveled_up = False
-    while character.xp_current_level >= XP_PER_LEVEL:
-        character.xp_current_level -= XP_PER_LEVEL
-        character.level += 1
-        character.age_display = character.level
-        leveled_up = True
+    # Запоминаем состояние до пересчёта, чтобы определить факт level up / rank up
+    prev_level = character.level
+    prev_rank = character.rank
 
-    # Проверяем повышение ранга
-    new_rank = None
-    rank_index = RANK_ORDER.index(character.rank)
-    earned_ranks = character.xp_total // XP_PER_RANK
-    target_rank_index = min(earned_ranks, len(RANK_ORDER) - 1)
-    if target_rank_index > rank_index:
-        character.rank = RANK_ORDER[target_rank_index]
-        new_rank = character.rank.value
+    # Пересчитываем уровень / прогресс / ранг из xp_total (источник истины).
+    # Тот же механизм используется в deduct_xp — начисление и откат симметричны.
+    _recalc_progress_from_total(character)
+
+    leveled_up = character.level > prev_level
+    new_rank = character.rank.value if character.rank != prev_rank else None
 
     # Логируем транзакцию XP
     xp_tx = XPTransaction(
@@ -117,10 +131,13 @@ async def deduct_xp(
     source: XPSource,
     source_id=None,
 ):
-    """Откат XP (кнопка Undone)."""
+    """Откат XP (кнопка Undone). Симметричен award_xp: пересчитывает
+    уровень и ранг из xp_total, поэтому уровень/ранг корректно понижаются."""
     character.xp_total = max(0, character.xp_total - amount)
-    character.xp_current_level = max(0, character.xp_current_level - amount)
     character.xp_earned_today = max(0, character.xp_earned_today - amount)
+
+    # Пересчитываем уровень, прогресс уровня и ранг из обновлённого xp_total
+    _recalc_progress_from_total(character)
 
     # Откатываем кредиты
     credits_to_remove = amount // 10
