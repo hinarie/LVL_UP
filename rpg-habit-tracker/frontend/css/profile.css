@@ -571,5 +571,6 @@
     line-height: 1.3;
 }
 .username-hint-muted { color: var(--text-muted); }
-.username-hint-error { color: var(--accent-red); }
+.username-hint-error,
+.username-hint-err   { color: var(--accent-red); }
 .username-hint-ok    { color: var(--accent-green); }

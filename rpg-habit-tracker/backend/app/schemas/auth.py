@@ -27,6 +27,10 @@ class OnboardingRequest(BaseModel):
     display_name: str
     character_name: str
     gender: Gender
+    # Опциональный — для обратной совместимости старого фронта.
+    # Если не передан, бэк сам сгенерирует username из email (как было раньше).
+    # Новый фронт передаёт его обязательно — валидируется в роутере.
+    username: Optional[str] = None
 
 
 class TokenResponse(BaseModel):

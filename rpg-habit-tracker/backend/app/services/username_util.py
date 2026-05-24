@@ -112,3 +112,69 @@ async def is_username_available(db: AsyncSession, username: str, exclude_user_id
         q = q.where(User.id != exclude_user_id)
     res = await db.execute(q)
     return res.scalar_one_or_none() is None
+
+
+# ════════════════════════════════════════════════════════════════
+# Кулдаун смены username — раз в 7 дней
+# ════════════════════════════════════════════════════════════════
+#
+# Хранится в отдельной таблице UsernameChange (один ряд на юзера).
+# Если строки нет — значит юзер ещё ни разу не менял username, смена разрешена.
+
+from datetime import timedelta
+from app.models.username_change import UsernameChange
+
+USERNAME_CHANGE_COOLDOWN = timedelta(days=7)
+
+
+async def get_username_change_record(db: AsyncSession, user_id) -> "UsernameChange | None":
+    res = await db.execute(
+        select(UsernameChange).where(UsernameChange.user_id == user_id)
+    )
+    return res.scalar_one_or_none()
+
+
+async def get_username_cooldown(db: AsyncSession, user_id) -> dict:
+    """
+    Возвращает {can_change, next_change_at, last_changed_at, seconds_left}.
+    Если юзер ещё ни разу не менял — can_change=True, остальное None/0.
+    """
+    rec = await get_username_change_record(db, user_id)
+    from datetime import datetime as _dt
+    now = _dt.utcnow()
+    if not rec:
+        return {
+            "can_change": True,
+            "last_changed_at": None,
+            "next_change_at": None,
+            "seconds_left": 0,
+        }
+    next_at = rec.changed_at + USERNAME_CHANGE_COOLDOWN
+    if now >= next_at:
+        return {
+            "can_change": True,
+            "last_changed_at": rec.changed_at,
+            "next_change_at": next_at,
+            "seconds_left": 0,
+        }
+    return {
+        "can_change": False,
+        "last_changed_at": rec.changed_at,
+        "next_change_at": next_at,
+        "seconds_left": int((next_at - now).total_seconds()),
+    }
+
+
+async def record_username_change(db: AsyncSession, user_id, new_username: str) -> None:
+    """Апсёрт записи в username_changes. НЕ коммитит — это делает вызывающий."""
+    from datetime import datetime as _dt
+    rec = await get_username_change_record(db, user_id)
+    if rec:
+        rec.changed_at = _dt.utcnow()
+        rec.new_username = new_username
+    else:
+        db.add(UsernameChange(
+            user_id=user_id,
+            changed_at=_dt.utcnow(),
+            new_username=new_username,
+        ))

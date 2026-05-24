@@ -654,10 +654,25 @@ document.getElementById('send-friend-request-m')?.addEventListener('click',
 document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-act]');
     if (!target) return;
-    // Обрабатываем только элементы внутри карточки поста ленты/профиля.
-    if (!target.closest('.post')) return;
 
     const act = target.dataset.act;
+
+    // open-user должен работать везде, где есть аватарка/имя пользователя:
+    // в постах ленты, в комментариях, в списке друзей, в карточках профиля
+    // и т.д. Поэтому обрабатываем его до общего фильтра по .post.
+    if (act === 'open-user') {
+        e.preventDefault();
+        e.stopPropagation();
+        const username = target.dataset.username;
+        if (typeof openUserProfile === 'function') openUserProfile(username);
+        return;
+    }
+
+    // Остальные действия (лайки, комментарии, удаление поста и т.п.) —
+    // только для карточек постов ленты/профиля, чтобы не пересекаться
+    // с делегацией ивентов в challenges.js.
+    if (!target.closest('.post')) return;
+
     const postId = target.dataset.postId;
     const commentId = target.dataset.commentId;
 
@@ -691,12 +706,6 @@ document.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             deletePost(postId);
-            break;
-        case 'open-user':
-            e.preventDefault();
-            e.stopPropagation();
-            const username = target.dataset.username;
-            if (typeof openUserProfile === 'function') openUserProfile(username);
             break;
     }
 }, true);

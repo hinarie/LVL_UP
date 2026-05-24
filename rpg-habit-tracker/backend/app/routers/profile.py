@@ -1,14 +1,3 @@
-"""
-Расширенный профиль пользователя:
-- PATCH /profile        — обновление ника/имени персонажа/аватара
-- GET   /profile/stats  — расширенная статистика (задачи, привычки, цели, посты)
-- GET   /profile/history?type=xp|credits&days=N — история транзакций
-- GET   /profile/achievements — вычисляемые достижения
-
-История постов и base-инфо остаются в /social/profile (там посты + друзья).
-Этот роутер — про прогресс, кастомизацию и аналитику.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
@@ -29,15 +18,11 @@ from app.models.challenges import ChallengeParticipant
 from app.core.deps import get_current_user
 from app.services.xp_service import XP_PER_LEVEL, DAILY_XP_CAP
 from app.services.username_util import (
-    validate_username, is_username_available, ensure_username
+    validate_username, is_username_available, ensure_username,
+    get_username_cooldown, record_username_change,
 )
 
 router = APIRouter(prefix="/profile", tags=["profile"])
-
-
-# ════════════════════════════════════════════════════════════════
-# PATCH /profile — редактирование
-# ════════════════════════════════════════════════════════════════
 
 class ProfileUpdate(BaseModel):
     display_name:    Optional[str] = Field(None, min_length=1, max_length=100)
@@ -57,16 +42,34 @@ async def update_profile(
     if not char:
         raise HTTPException(404, "Персонаж не найден")
 
-    # Username — отдельная логика с уникальностью
     if data.username is not None:
         new_username = data.username.strip().lower()
         if new_username != (current_user.username or ""):
+            cooldown = await get_username_cooldown(db, current_user.id)
+            if not cooldown["can_change"]:
+                seconds_left = cooldown["seconds_left"]
+                days = seconds_left // 86400
+                hours = (seconds_left % 86400) // 3600
+                if days > 0:
+                    when = f"{days} дн. {hours} ч."
+                elif hours > 0:
+                    minutes = (seconds_left % 3600) // 60
+                    when = f"{hours} ч. {minutes} мин."
+                else:
+                    minutes = max(1, seconds_left // 60)
+                    when = f"{minutes} мин."
+                raise HTTPException(
+                    400,
+                    f"Менять @username можно раз в 7 дней. Попробуйте через {when}."
+                )
+
             ok, err = validate_username(new_username)
             if not ok:
                 raise HTTPException(400, err)
             if not await is_username_available(db, new_username, exclude_user_id=current_user.id):
                 raise HTTPException(400, "Этот username уже занят")
             current_user.username = new_username
+            await record_username_change(db, current_user.id, new_username)
 
     if data.display_name is not None:
         char.display_name = data.display_name.strip()
@@ -110,6 +113,22 @@ async def check_username(
         "valid": True,
         "error": "" if available else "Этот username уже занят",
     }
+
+
+# ════════════════════════════════════════════════════════════════
+# GET /profile/username/cooldown — статус «когда можно менять снова»
+# ════════════════════════════════════════════════════════════════
+
+@router.get("/username/cooldown")
+async def username_cooldown(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Возвращает {can_change, last_changed_at, next_change_at, seconds_left}.
+    Используется фронтом, чтобы показать таймер до следующей возможной смены.
+    """
+    return await get_username_cooldown(db, current_user.id)
 
 
 

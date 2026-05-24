@@ -169,13 +169,78 @@ document.querySelectorAll('.gender-btn').forEach(btn => {
     });
 });
 
+// Онбординг — живая проверка username с дебаунсом
+(function setupOnboardingUsernameCheck() {
+    const input = document.getElementById('onboarding-username');
+    const hint  = document.getElementById('onboarding-username-hint');
+    if (!input || !hint) return;
+
+    let timer = null;
+    let lastChecked = '';
+    let lastAvailable = false;
+
+    function setHint(msg, kind) {
+        // kind: 'ok' | 'err' | 'muted'
+        hint.textContent = msg;
+        hint.style.display = msg ? 'block' : 'none';
+        hint.classList.remove('username-hint-ok', 'username-hint-err', 'username-hint-muted');
+        if (kind === 'ok')  hint.classList.add('username-hint-ok');
+        if (kind === 'err') hint.classList.add('username-hint-err');
+        if (kind === 'muted') hint.classList.add('username-hint-muted');
+    }
+
+    // Доступность кешируем, чтобы submit мог моментально решить
+    input._isAvailable = () => lastAvailable && lastChecked === input.value.trim().toLowerCase();
+
+    input.addEventListener('input', () => {
+        const val = input.value.trim().toLowerCase();
+        input.value = val; // нормализация — нижний регистр
+        clearTimeout(timer);
+        if (!val) { setHint('', 'muted'); return; }
+        if (val.length < 3) { setHint('Минимум 3 символа', 'err'); return; }
+        if (val.length > 30) { setHint('Максимум 30 символов', 'err'); return; }
+        if (!/^[a-z0-9_]+$/.test(val)) {
+            setHint('Только латинские буквы, цифры и _', 'err');
+            return;
+        }
+        setHint('Проверяем…', 'muted');
+        timer = setTimeout(async () => {
+            try {
+                const res = await api.request(
+                    'GET',
+                    `/profile/username/check?username=${encodeURIComponent(val)}`,
+                    null, true
+                );
+                lastChecked = val;
+                lastAvailable = !!res.available;
+                if (!res.valid) {
+                    setHint(res.error || 'Невалидный username', 'err');
+                } else if (res.available) {
+                    setHint('Свободен ✓', 'ok');
+                } else {
+                    setHint(res.error || 'Уже занят', 'err');
+                }
+            } catch (e) {
+                setHint('Не удалось проверить — попробуйте ещё раз', 'err');
+            }
+        }, 350);
+    });
+})();
+
 // Онбординг — отправка
 document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const display_name = document.getElementById('display-name').value;
     const character_name = document.getElementById('character-name').value;
+    const username = document.getElementById('onboarding-username').value.trim().toLowerCase();
     const genderBtn = document.querySelector('.gender-btn.active');
 
+    if (!username || username.length < 3) {
+        return showError('onboarding-error', 'Придумай @username (минимум 3 символа)');
+    }
+    if (!/^[a-z0-9_]+$/.test(username)) {
+        return showError('onboarding-error', 'Username: только латинские буквы, цифры и _');
+    }
     if (!genderBtn) return showError('onboarding-error', 'Выбери пол персонажа');
 
     const gender = genderBtn.dataset.gender;
@@ -184,7 +249,7 @@ document.getElementById('onboarding-form').addEventListener('submit', async (e) 
     btn.textContent = 'Создание...';
 
     try {
-        const data = await api.onboarding(display_name, character_name, gender);
+        const data = await api.onboarding(display_name, character_name, gender, username);
         api.setToken(data.access_token);
         loadApp();
     } catch (err) {

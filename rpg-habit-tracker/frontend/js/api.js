@@ -27,8 +27,9 @@ const api = {
     login: (email, password) =>
         api.request('POST', '/auth/login', { email, password }),
 
-    onboarding: (display_name, character_name, gender) =>
-        api.request('POST', '/auth/onboarding', { display_name, character_name, gender }, true),
+    onboarding: (display_name, character_name, gender, username) =>
+        api.request('POST', '/auth/onboarding',
+            { display_name, character_name, gender, username }, true),
 
     me: () => api.request('GET', '/auth/me', null, true),
 };

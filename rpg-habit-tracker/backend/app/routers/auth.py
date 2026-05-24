@@ -98,6 +98,18 @@ async def onboarding(
     if current_user.is_onboarded:
         raise HTTPException(status_code=400, detail="Онбординг уже пройден")
 
+    # Username из формы (новый фронт). Если пришёл — валидируем и проверяем
+    # уникальность; если нет — fallback к старой авто-генерации из email.
+    if data.username:
+        from app.services.username_util import validate_username, is_username_available
+        new_username = data.username.strip().lower()
+        ok, err = validate_username(new_username)
+        if not ok:
+            raise HTTPException(400, err)
+        if not await is_username_available(db, new_username, exclude_user_id=current_user.id):
+            raise HTTPException(400, "Этот username уже занят")
+        current_user.username = new_username
+
     character = Character(
         id=uuid.uuid4(),
         user_id=current_user.id,
@@ -117,7 +129,7 @@ async def onboarding(
     current_user.is_onboarded = True
     await db.commit()
 
-    # Создаём username если ещё нет
+    # Если username не передали (старый фронт) — авто-сгенерим из email
     await ensure_username(db, current_user)
 
     token = create_access_token({"sub": str(current_user.id)})

@@ -93,6 +93,12 @@
         </div>
         <form id="onboarding-form">
             <div class="field">
+                <label>Username <span class="field-hint-inline">@ник — уникальный, поменять можно раз в 7 дней</span></label>
+                <input id="onboarding-username" type="text" placeholder="anna_2024"
+                       maxlength="30" autocomplete="off" required>
+                <div id="onboarding-username-hint" class="username-hint username-hint-muted" style="display:none"></div>
+            </div>
+            <div class="field">
                 <label>Твоё имя</label>
                 <input id="display-name" type="text" placeholder="Как тебя зовут?" required maxlength="50">
             </div>
