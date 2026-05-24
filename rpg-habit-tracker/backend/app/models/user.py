@@ -25,9 +25,15 @@ class User(Base):
     oauth_provider = Column(SAEnum(OAuthProvider), default=OAuthProvider.email)
     oauth_provider_id = Column(String(255), nullable=True)
 
+    # Уникальный @username для постов и упоминаний.
+    # nullable=True, потому что старые пользователи могут не иметь его сразу;
+    # auto-генерация при первом /auth/me. После — становится обязательным
+    # через эндпоинт /profile.
+    username = Column(String(30), unique=True, nullable=True, index=True)
+
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
-    is_onboarded = Column(Boolean, default=False)  # прошёл ли онбординг
+    is_onboarded = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

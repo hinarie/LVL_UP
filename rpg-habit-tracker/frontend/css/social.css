@@ -319,14 +319,28 @@
 .post-act.pop .post-act-ico { transform: scale(1.4); }
 
 /* ── Комментарии под постом ленты ───────────────────────────── */
+/* По умолчанию скрыто; класс .open показывает блок. */
 .post-comments {
+    display: none;
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--border);
 }
+.post-comments.open { display: block; }
 .post-comments-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
 .post-comments-loading,
 .post-comments-empty { font-size: 12px; color: var(--text-muted); padding: 4px 0; }
+
+/* Кликабельные имена/аватары — ведут в чужой профиль */
+.post-link { cursor: pointer; transition: opacity 0.15s ease; }
+.post-link:hover { opacity: 0.75; }
+.post-handle {
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+.post-handle:hover { color: var(--accent-purple-bright); }
 
 .post-comment { display: flex; gap: 8px; }
 .post-comment-avatar {

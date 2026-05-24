@@ -15,12 +15,13 @@ from app.core.deps import get_current_user
 router = APIRouter(prefix="/social", tags=["social"])
 
 
-def char_to_dict(char: Character) -> dict:
+def char_to_dict(char: Character, user: User = None) -> dict:
     if not char:
         return {}
     return {
         "character_name": char.character_name,
         "display_name": char.display_name,
+        "username": user.username if user else None,
         "level": char.level,
         "rank": char.rank.value,
         "avatar_url": char.avatar_url,
@@ -30,7 +31,8 @@ def char_to_dict(char: Character) -> dict:
 
 
 def post_to_dict(post: Post, author_char: Character, my_reaction=None,
-                 likes: int = 0, dislikes: int = 0, comments_count: int = 0) -> dict:
+                 likes: int = 0, dislikes: int = 0, comments_count: int = 0,
+                 author_user: User = None) -> dict:
     return {
         "id": str(post.id),
         "content": post.content,
@@ -41,9 +43,9 @@ def post_to_dict(post: Post, author_char: Character, my_reaction=None,
         "auto_event_data": post.auto_event_data,
         "created_at": post.created_at,
         "author_id": str(post.user_id),
-        "author": char_to_dict(author_char),
-        "my_reaction": my_reaction,          # 'like' | 'dislike' | None
-        "liked": my_reaction == "like",      # обратная совместимость
+        "author": char_to_dict(author_char, author_user),
+        "my_reaction": my_reaction,
+        "liked": my_reaction == "like",
         "likes": likes,
         "dislikes": dislikes,
         "comments_count": comments_count,
@@ -122,12 +124,23 @@ async def get_feed(
     for c in comments_result.scalars().all():
         comments_by_post[str(c.post_id)] = comments_by_post.get(str(c.post_id), 0) + 1
 
+    # Batch-загрузка авторов: characters + users одним проходом
+    author_user_ids = list({p.user_id for p in posts})
+    chars_result = await db.execute(
+        select(Character).where(Character.user_id.in_(author_user_ids))
+    )
+    char_by_uid = {str(c.user_id): c for c in chars_result.scalars().all()}
+
+    users_result = await db.execute(
+        select(User).where(User.id.in_(author_user_ids))
+    )
+    user_by_uid = {str(u.id): u for u in users_result.scalars().all()}
+
     response = []
     for post in posts:
-        char_result = await db.execute(
-            select(Character).where(Character.user_id == post.user_id)
-        )
-        author_char = char_result.scalar_one_or_none()
+        uid = str(post.user_id)
+        author_char = char_by_uid.get(uid)
+        author_user = user_by_uid.get(uid)
         pid = str(post.id)
         response.append(post_to_dict(
             post, author_char,
@@ -135,6 +148,7 @@ async def get_feed(
             likes=likes_by_post.get(pid, 0),
             dislikes=dislikes_by_post.get(pid, 0),
             comments_count=comments_by_post.get(pid, 0),
+            author_user=author_user,
         ))
 
     return sorted(response, key=lambda p: str(p["created_at"]), reverse=True)
@@ -161,7 +175,8 @@ async def create_post(
         select(Character).where(Character.user_id == current_user.id)
     )
     char = char_result.scalar_one_or_none()
-    return post_to_dict(post, char, my_reaction=None, likes=0, dislikes=0, comments_count=0)
+    return post_to_dict(post, char, my_reaction=None, likes=0, dislikes=0, comments_count=0,
+                        author_user=current_user)
 
 
 async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
@@ -260,23 +275,34 @@ async def list_comments(
     )
     comments = res.scalars().all()
 
-    # Имена авторов
+    # Имена авторов одним батчем
     author_ids = list({c.user_id for c in comments})
-    names = {}
-    for uid in author_ids:
-        ch = await db.execute(select(Character).where(Character.user_id == uid))
-        c = ch.scalar_one_or_none()
-        names[str(uid)] = {
-            "name": c.character_name if c else "Герой",
-            "level": c.level if c else 1,
-        }
+    info = {}
+    if author_ids:
+        chars_res = await db.execute(
+            select(Character).where(Character.user_id.in_(author_ids))
+        )
+        for ch in chars_res.scalars().all():
+            info[str(ch.user_id)] = {
+                "name": ch.character_name,
+                "display_name": ch.display_name,
+                "level": ch.level,
+            }
+        users_res = await db.execute(
+            select(User).where(User.id.in_(author_ids))
+        )
+        for u in users_res.scalars().all():
+            entry = info.setdefault(str(u.id), {})
+            entry["username"] = u.username
 
     return [{
         "id": str(c.id),
         "content": c.content,
         "user_id": str(c.user_id),
-        "author_name": names.get(str(c.user_id), {}).get("name", "Герой"),
-        "author_level": names.get(str(c.user_id), {}).get("level", 1),
+        "author_name":         info.get(str(c.user_id), {}).get("name", "Герой"),
+        "author_display_name": info.get(str(c.user_id), {}).get("display_name", "Герой"),
+        "author_username":     info.get(str(c.user_id), {}).get("username"),
+        "author_level":        info.get(str(c.user_id), {}).get("level", 1),
         "created_at": c.created_at,
     } for c in comments]
 
@@ -292,7 +318,6 @@ async def add_comment(
     if not content or len(content) > 300:
         raise HTTPException(400, "Комментарий от 1 до 300 символов")
 
-    # Пост должен существовать
     post_res = await db.execute(select(Post).where(Post.id == post_id))
     if not post_res.scalar_one_or_none():
         raise HTTPException(404, "Пост не найден")
@@ -313,8 +338,10 @@ async def add_comment(
         "id": str(comment.id),
         "content": comment.content,
         "user_id": str(comment.user_id),
-        "author_name": char.character_name if char else "Герой",
-        "author_level": char.level if char else 1,
+        "author_name":         char.character_name if char else "Герой",
+        "author_display_name": char.display_name if char else "Герой",
+        "author_username":     current_user.username,
+        "author_level":        char.level if char else 1,
         "created_at": comment.created_at,
     }
 
@@ -339,18 +366,29 @@ async def delete_comment(
 
 @router.post("/friends/request")
 async def send_friend_request(
-    data: FriendRequestCreate,
+    data: dict,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    target_result = await db.execute(
-        select(User).where(User.email == data.addressee_email)
-    )
-    target = target_result.scalar_one_or_none()
+    """Принимает либо addressee_email, либо username."""
+    target = None
+
+    email = (data.get("addressee_email") or "").strip().lower()
+    username = (data.get("username") or "").strip().lower()
+
+    if username:
+        r = await db.execute(select(User).where(User.username == username))
+        target = r.scalar_one_or_none()
+    elif email:
+        r = await db.execute(select(User).where(User.email == email))
+        target = r.scalar_one_or_none()
+    else:
+        raise HTTPException(400, "Укажите email или username")
+
     if not target:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+        raise HTTPException(404, "Пользователь не найден")
     if str(target.id) == str(current_user.id):
-        raise HTTPException(status_code=400, detail="Нельзя добавить себя")
+        raise HTTPException(400, "Нельзя добавить себя")
 
     existing = await db.execute(
         select(Friendship).where(
@@ -360,8 +398,15 @@ async def send_friend_request(
             )
         )
     )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Запрос уже отправлен или вы уже друзья")
+    fr = existing.scalar_one_or_none()
+    if fr:
+        if fr.status == FriendshipStatus.accepted:
+            raise HTTPException(400, "Вы уже друзья")
+        if fr.status == FriendshipStatus.pending:
+            raise HTTPException(400, "Запрос уже отправлен")
+        # declined → можно отправить заново: пересоздаём
+        await db.delete(fr)
+        await db.flush()
 
     friendship = Friendship(
         id=uuid.uuid4(),
@@ -371,7 +416,78 @@ async def send_friend_request(
     )
     db.add(friendship)
     await db.commit()
-    return {"message": f"Запрос отправлен пользователю {data.addressee_email}"}
+    label = username or email
+    return {"message": f"Запрос отправлен пользователю {label}"}
+
+
+@router.post("/friends/cancel")
+async def cancel_friend_request(
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Отменяет свой исходящий запрос (по username или user_id)."""
+    username = (data.get("username") or "").strip().lower()
+    user_id = data.get("user_id")
+    target = None
+    if username:
+        r = await db.execute(select(User).where(User.username == username))
+        target = r.scalar_one_or_none()
+    elif user_id:
+        r = await db.execute(select(User).where(User.id == user_id))
+        target = r.scalar_one_or_none()
+    if not target:
+        raise HTTPException(404, "Пользователь не найден")
+
+    fr_res = await db.execute(
+        select(Friendship).where(
+            Friendship.requester_id == current_user.id,
+            Friendship.addressee_id == target.id,
+            Friendship.status == FriendshipStatus.pending,
+        )
+    )
+    fr = fr_res.scalar_one_or_none()
+    if not fr:
+        raise HTTPException(404, "Активный запрос не найден")
+    await db.delete(fr)
+    await db.commit()
+    return {"message": "Запрос отменён"}
+
+
+@router.post("/friends/remove")
+async def remove_friend(
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Убирает дружбу с пользователем (по username или user_id)."""
+    username = (data.get("username") or "").strip().lower()
+    user_id = data.get("user_id")
+    target = None
+    if username:
+        r = await db.execute(select(User).where(User.username == username))
+        target = r.scalar_one_or_none()
+    elif user_id:
+        r = await db.execute(select(User).where(User.id == user_id))
+        target = r.scalar_one_or_none()
+    if not target:
+        raise HTTPException(404, "Пользователь не найден")
+
+    fr_res = await db.execute(
+        select(Friendship).where(
+            or_(
+                and_(Friendship.requester_id == current_user.id, Friendship.addressee_id == target.id),
+                and_(Friendship.requester_id == target.id, Friendship.addressee_id == current_user.id),
+            ),
+            Friendship.status == FriendshipStatus.accepted,
+        )
+    )
+    fr = fr_res.scalar_one_or_none()
+    if not fr:
+        raise HTTPException(404, "Вы не друзья")
+    await db.delete(fr)
+    await db.commit()
+    return {"message": "Удалён из друзей"}
 
 
 @router.get("/friends/requests")
@@ -397,7 +513,7 @@ async def get_friend_requests(
         response.append({
             "id": str(req.id),
             "requester_email": user.email if user else "",
-            "requester": char_to_dict(char),
+            "requester": char_to_dict(char, user),
             "created_at": req.created_at,
         })
     return response
@@ -469,7 +585,8 @@ async def get_friends(
             "friendship_id": str(f.id),
             "user_id": str(friend_id),
             "email": user.email if user else "",
-            "character": char_to_dict(char),
+            "username": user.username if user else None,
+            "character": char_to_dict(char, user),
         })
     return response
 
@@ -537,6 +654,7 @@ async def get_my_profile(
         post_list.append(post_to_dict(
             post, char, my_reaction=my_reaction,
             likes=likes, dislikes=dislikes, comments_count=comments_count,
+            author_user=current_user,
         ))
 
     # Добавляем посты из ивентов (cross_posted=True — пользователь сам выбрал)
@@ -548,7 +666,6 @@ async def get_my_profile(
         ).order_by(ChallengePost.created_at.desc()).limit(20)
     )
     for cp in ch_posts_result.scalars().all():
-        # Проверяем что такого поста нет уже (через cross_post_id)
         already = any(str(p.get("id")) == str(cp.cross_post_id) for p in post_list)
         if already:
             continue
@@ -562,7 +679,7 @@ async def get_my_profile(
             "auto_event_data": None,
             "created_at": cp.created_at,
             "author_id": str(cp.user_id),
-            "author": char_to_dict(char),
+            "author": char_to_dict(char, current_user),
             "my_reaction": None,
             "liked": False,
             "likes": 0,
@@ -574,8 +691,12 @@ async def get_my_profile(
     post_list.sort(key=lambda p: str(p["created_at"]), reverse=True)
 
     return {
-        "user": {"id": str(current_user.id), "email": current_user.email},
-        "character": char_to_dict(char),
+        "user": {
+            "id": str(current_user.id),
+            "email": current_user.email,
+            "username": current_user.username,
+        },
+        "character": char_to_dict(char, current_user),
         "friends_count": friends_count,
         "posts": post_list,
     }

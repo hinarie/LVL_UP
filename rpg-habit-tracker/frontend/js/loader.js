@@ -47,12 +47,15 @@ async function initApp() {
 
         // Подгружаем скрипты последовательно
         await loadScripts([
+            '/js/confirm.js',
             '/js/auth.js',
             '/js/tasks.js',
             '/js/goals.js',
             '/js/habits.js',
             '/js/shop.js',
             '/js/social.js',
+            '/js/profile.js',
+            '/js/user-profile.js',
             '/js/challenges.js',
             '/js/app.js',
         ]);

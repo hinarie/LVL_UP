@@ -1,0 +1,575 @@
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE — расширенный профиль с табами, достижениями, историей
+   Палитра/типографика наследуется от base.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+.profile-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ─── HERO ─────────────────────────────────────────────────── */
+.profile-hero {
+    position: relative;
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.profile-hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 0%, var(--accent-purple-glow), transparent 50%),
+        radial-gradient(circle at 85% 100%, var(--accent-cyan-glow), transparent 50%);
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.profile-hero-content {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr 320px;
+    gap: 24px;
+    align-items: center;
+    padding: 28px;
+}
+
+/* Аватар */
+.profile-avatar-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 3px solid var(--accent-purple);
+    box-shadow: 0 0 24px var(--accent-purple-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    overflow: hidden;
+}
+.profile-avatar img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+}
+.profile-avatar-edit {
+    position: absolute;
+    right: -2px; bottom: -2px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent-purple);
+    color: #fff;
+    border: 3px solid var(--bg-card);
+    cursor: pointer;
+    font-size: 14px;
+    transition: var(--transition);
+}
+.profile-avatar-edit:hover { background: var(--accent-purple-bright); transform: scale(1.08); }
+
+/* Идентификатор */
+.profile-id { min-width: 0; }
+.profile-name-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px;
+}
+.profile-char-name {
+    font-size: 30px; font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.5px;
+    word-break: break-word;
+}
+.profile-edit-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--transition);
+}
+.profile-edit-btn:hover { border-color: var(--accent-purple); color: var(--accent-purple-bright); }
+
+.profile-display-name {
+    font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;
+}
+.profile-display-name:empty { display: none; }
+
+.profile-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px; font-size: 13px;
+}
+.profile-rank-chip {
+    background: linear-gradient(135deg, var(--accent-yellow), #c2410c);
+    color: #1a0e00;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.profile-dot { color: var(--text-muted); }
+.profile-since { color: var(--text-secondary); }
+.profile-email { font-size: 12px; color: var(--text-muted); word-break: break-all; }
+
+/* Карточка уровня */
+.profile-level-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+.profile-level-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+}
+.profile-level-big { display: flex; align-items: baseline; gap: 8px; }
+.profile-level-label {
+    font-size: 10px; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 700;
+}
+.profile-level-num {
+    font-size: 36px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-purple-bright), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+}
+.profile-level-xp { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+.profile-xp-bar {
+    height: 8px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.profile-xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 12px var(--accent-purple-glow);
+}
+
+/* Стат-карточки */
+.profile-statgrid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+}
+.profile-stat-card {
+    background: var(--bg-card);
+    padding: 14px 10px;
+    text-align: center;
+    transition: var(--transition);
+}
+.profile-stat-card:hover { background: var(--bg-card-hover); }
+.profile-stat-icon { font-size: 20px; margin-bottom: 4px; }
+.profile-stat-val {
+    font-size: 22px; font-weight: 800;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+.profile-stat-val.gold { color: var(--accent-yellow); }
+.profile-stat-val.cyan { color: var(--accent-cyan); }
+.profile-stat-val.fire { color: var(--accent-red); }
+.profile-stat-lbl {
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 2px; letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+/* ─── ТАБЫ ───────────────────────────────────────────────── */
+.profile-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.profile-tabs::-webkit-scrollbar { display: none; }
+.profile-tab {
+    flex: 1;
+    min-width: max-content;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+.profile-tab:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+.profile-tab.active {
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    color: #fff;
+    box-shadow: 0 4px 16px var(--accent-purple-glow);
+}
+
+/* ─── ПАНЕЛИ ─────────────────────────────────────────────── */
+.profile-pane { display: none; animation: profile-fade 0.25s ease; }
+.profile-pane.active { display: block; }
+@keyframes profile-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.profile-section-head { margin-bottom: 16px; }
+.profile-section-head h3 {
+    font-size: 18px; font-weight: 700; margin: 0 0 4px;
+    color: var(--text-primary);
+}
+.profile-section-head p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+/* Обзор */
+.profile-cards-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+.profile-mini {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    transition: var(--transition);
+}
+.profile-mini:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+.profile-mini-title { font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+.profile-mini-val { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.profile-mini-val .muted { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+.profile-mini-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.profile-mini-bar { height: 4px; background: var(--bg-secondary); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.profile-mini-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+    border-radius: 2px; transition: width 0.4s ease;
+}
+
+/* Кастомизация — инвентарь */
+.profile-inv-filters {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+}
+.profile-inv-filter {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 7px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--transition);
+}
+.profile-inv-filter:hover { border-color: var(--border-bright); color: var(--text-primary); }
+.profile-inv-filter.active {
+    background: var(--accent-purple);
+    border-color: var(--accent-purple);
+    color: #fff;
+}
+
+.profile-inv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+.profile-inv-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: var(--transition);
+    position: relative;
+}
+.profile-inv-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+.profile-inv-card.equipped { border-color: var(--accent-green); }
+.profile-inv-card.rarity-rare      { border-color: var(--accent-cyan); }
+.profile-inv-card.rarity-epic      { border-color: var(--accent-purple); }
+.profile-inv-card.rarity-legendary { border-color: var(--accent-yellow); box-shadow: 0 0 16px rgba(245,158,11,0.2); }
+
+.profile-inv-icon { font-size: 36px; line-height: 1; }
+.profile-inv-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.profile-inv-rar  { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.profile-inv-qty {
+    position: absolute; top: 6px; right: 8px;
+    background: var(--bg-secondary); color: var(--text-secondary);
+    padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;
+}
+.profile-inv-equipped {
+    font-size: 10px; color: var(--accent-green); font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+}
+.profile-inv-actions { width: 100%; display: flex; gap: 6px; margin-top: 4px; }
+.profile-inv-actions button {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 11px; font-weight: 600;
+    transition: var(--transition);
+}
+.profile-inv-actions button:hover { border-color: var(--accent-purple); }
+.profile-inv-actions .btn-unequip { color: var(--text-muted); }
+.profile-inv-empty {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+.profile-inv-empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* Достижения */
+.profile-ach-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+.profile-ach-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex; gap: 12px;
+    transition: var(--transition);
+    position: relative;
+}
+.profile-ach-card.unlocked {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(124,58,237,0.08) 100%);
+    border-color: var(--accent-purple);
+}
+.profile-ach-card.locked { opacity: 0.55; filter: grayscale(0.4); }
+.profile-ach-card:hover { transform: translateY(-2px); }
+.profile-ach-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+.profile-ach-card.unlocked .profile-ach-icon {
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    box-shadow: 0 0 16px var(--accent-purple-glow);
+}
+.profile-ach-body { flex: 1; min-width: 0; }
+.profile-ach-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.profile-ach-desc { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.35; }
+.profile-ach-bar { height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+.profile-ach-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+    transition: width 0.4s ease;
+}
+.profile-ach-prog { font-size: 10px; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.profile-ach-badge {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--accent-green); color: #052e1d;
+    font-size: 9px; font-weight: 800;
+    padding: 2px 6px; border-radius: 999px;
+    letter-spacing: 0.5px;
+}
+
+/* История */
+.profile-history-controls {
+    display: flex; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 16px;
+}
+.profile-history-tabs {
+    display: flex; gap: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+}
+.profile-history-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+.profile-history-tab.active {
+    background: var(--accent-purple);
+    color: #fff;
+}
+.profile-history-range {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.profile-history-summary {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+}
+.profile-history-total {
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-purple-bright), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Спарклайн */
+.profile-spark { flex: 1; min-width: 200px; height: 50px; }
+
+.profile-history-list { display: flex; flex-direction: column; gap: 8px; }
+.profile-history-row {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    transition: var(--transition);
+}
+.profile-history-row:hover { border-color: var(--border-bright); }
+.profile-history-row-left { flex: 1; min-width: 0; }
+.profile-history-source {
+    font-size: 13px; font-weight: 600; color: var(--text-primary);
+}
+.profile-history-desc {
+    font-size: 11px; color: var(--text-muted); margin-top: 2px;
+}
+.profile-history-row-right {
+    text-align: right; flex-shrink: 0;
+}
+.profile-history-amount {
+    font-size: 16px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.profile-history-amount.pos { color: var(--accent-green); }
+.profile-history-amount.neg { color: var(--accent-red); }
+.profile-history-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.profile-history-empty {
+    text-align: center; padding: 40px;
+    color: var(--text-muted); font-size: 13px;
+}
+
+/* Аватар-пикер в модалке */
+.avatar-picker {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+.avatar-picker-cell {
+    aspect-ratio: 1;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.avatar-picker-cell:hover { border-color: var(--accent-purple); transform: scale(1.08); }
+.avatar-picker-cell.selected {
+    border-color: var(--accent-purple);
+    background: var(--accent-purple-glow);
+    box-shadow: 0 0 16px var(--accent-purple-glow);
+}
+
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn-ghost {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-secondary); padding: 10px 16px;
+    border-radius: var(--radius-sm); cursor: pointer;
+    transition: var(--transition);
+}
+.btn-ghost:hover { border-color: var(--border-bright); color: var(--text-primary); }
+
+/* ─── АДАПТИВ ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .profile-hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 16px;
+        padding: 20px;
+    }
+    .profile-avatar-wrap { margin: 0 auto; width: 96px; height: 96px; }
+    .profile-avatar { font-size: 52px; }
+    .profile-name-row { justify-content: center; }
+    .profile-char-name { font-size: 24px; }
+    .profile-meta { justify-content: center; }
+    .profile-statgrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 560px) {
+    .profile-wrap { padding: 16px 12px 80px; gap: 16px; }
+    .profile-statgrid { grid-template-columns: repeat(3, 1fr); }
+    .profile-stat-val { font-size: 18px; }
+    .profile-cards-row { grid-template-columns: repeat(2, 1fr); }
+    .profile-ach-grid { grid-template-columns: 1fr; }
+    .profile-inv-grid { grid-template-columns: repeat(2, 1fr); }
+    .avatar-picker { grid-template-columns: repeat(6, 1fr); }
+    .profile-tab { padding: 8px 10px; font-size: 12px; }
+}
+
+
+/* Username @-handle в шапке профиля */
+.profile-handle {
+    color: var(--accent-purple-bright);
+    font-weight: 600;
+    font-size: 13px;
+}
+.profile-charname {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Подсказки в полях редактирования */
+.field-hint-inline {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 6px;
+}
+.username-hint {
+    margin-top: 5px;
+    font-size: 11px;
+    padding: 4px 0;
+    line-height: 1.3;
+}
+.username-hint-muted { color: var(--text-muted); }
+.username-hint-error { color: var(--accent-red); }
+.username-hint-ok    { color: var(--accent-green); }

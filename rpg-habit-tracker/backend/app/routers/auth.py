@@ -14,6 +14,7 @@ from app.schemas.auth import (
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.email import generate_otp, get_otp_expiry, send_otp_email
 from app.core.deps import get_current_user
+from app.services.username_util import ensure_username
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -116,14 +117,23 @@ async def onboarding(
     current_user.is_onboarded = True
     await db.commit()
 
+    # Создаём username если ещё нет
+    await ensure_username(db, current_user)
+
     token = create_access_token({"sub": str(current_user.id)})
     return TokenResponse(access_token=token, is_onboarded=True)
 
 
 @router.get("/me")
-async def me(current_user: User = Depends(get_current_user)):
+async def me(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Гарантируем username (для всех старых юзеров — генерация при первом запросе)
+    username = await ensure_username(db, current_user)
     return {
         "id": str(current_user.id),
         "email": current_user.email,
+        "username": username,
         "is_onboarded": current_user.is_onboarded,
     }

@@ -24,6 +24,14 @@ function escapeHtml(text) {
         .replace(/\n/g, '<br>');
 }
 
+function escapeAttrSafe(text) {
+    return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 // Относительное время в стиле соцсетей: «только что», «5 мин», «3 ч», «2 д», дата
 function relTime(iso) {
     if (!iso) return '';
@@ -87,7 +95,7 @@ function makePostCard(post) {
     card.className = 'post';
     card.id = `post-${post.id}`;
 
-    const authorName  = post.author?.character_name || 'Герой';
+    const authorName  = post.author?.display_name || post.author?.character_name || 'Герой';
     const authorLevel = post.author?.level || 1;
     const authorRank  = post.author?.rank || 'Warrior';
     const isOwn = String(post.author_id) === String(getCurrentUserId());
@@ -107,15 +115,28 @@ function makePostCard(post) {
     }
 
     const delBtn = isOwn && !post.is_auto_generated
-        ? `<button class="post-menu" title="Удалить" onclick="deletePost('${post.id}')">🗑</button>`
+        ? `<button class="post-menu" title="Удалить" data-act="delete-post" data-post-id="${post.id}">🗑</button>`
         : '';
+
+    // Имя автора кликабельно — ведёт в профиль (если есть username)
+    const authorUsername = post.author?.username || '';
+    const nameHtml = authorUsername
+        ? `<span class="post-name post-link" data-act="open-user" data-username="${escapeAttrSafe(authorUsername)}">${escapeHtml(authorName)}</span>`
+        : `<span class="post-name">${escapeHtml(authorName)}</span>`;
+    const handleHtml = authorUsername
+        ? `<span class="post-handle" data-act="open-user" data-username="${escapeAttrSafe(authorUsername)}">@${escapeHtml(authorUsername)}</span>`
+        : '';
+    const avatarHtml = authorUsername
+        ? `<div class="post-avatar post-link" data-act="open-user" data-username="${escapeAttrSafe(authorUsername)}">${avatar}</div>`
+        : `<div class="post-avatar">${avatar}</div>`;
 
     const myR = post.my_reaction; // 'like' | 'dislike' | null
     card.innerHTML = `
-        <div class="post-avatar">${avatar}</div>
+        ${avatarHtml}
         <div class="post-main">
             <div class="post-head">
-                <span class="post-name">${escapeHtml(authorName)}</span>
+                ${nameHtml}
+                ${handleHtml}
                 <span class="post-sub">Lvl ${authorLevel} · ${authorRank}</span>
                 <span class="post-dot">·</span>
                 <span class="post-time">${relTime(post.created_at)}</span>
@@ -126,27 +147,27 @@ function makePostCard(post) {
             <div class="post-text">${escapeHtml(post.content)}</div>
             <div class="post-bar">
                 <button class="post-act post-like ${myR === 'like' ? 'liked' : ''}"
-                    onclick="reactPost('${post.id}','like',this)">
+                    data-act="react-like" data-post-id="${post.id}">
                     <span class="post-act-ico">${myR === 'like' ? '❤️' : '🤍'}</span>
                     <span class="post-act-num">${post.likes || 0}</span>
                 </button>
                 <button class="post-act post-dislike ${myR === 'dislike' ? 'disliked' : ''}"
-                    onclick="reactPost('${post.id}','dislike',this)">
+                    data-act="react-dislike" data-post-id="${post.id}">
                     <span class="post-act-ico">${myR === 'dislike' ? '👎🏻' : '👎'}</span>
                     <span class="post-act-num">${post.dislikes || 0}</span>
                 </button>
-                <button class="post-act post-comment-btn" onclick="toggleComments('${post.id}',this)">
+                <button class="post-act post-comment-btn" data-act="toggle-comments" data-post-id="${post.id}">
                     <span class="post-act-ico">💬</span>
                     <span class="post-act-num post-cc-${post.id}">${post.comments_count || 0}</span>
                 </button>
             </div>
-            <div class="post-comments" id="post-comments-${post.id}" style="display:none">
+            <div class="post-comments" id="post-comments-${post.id}">
                 <div class="post-comments-list" id="post-comments-list-${post.id}"></div>
                 <div class="post-comment-form">
                     <input class="post-comment-input" id="post-comment-input-${post.id}"
                         placeholder="Добавить комментарий…" maxlength="300"
-                        onkeydown="if(event.key==='Enter')sendComment('${post.id}')">
-                    <button class="post-comment-send" onclick="sendComment('${post.id}')">↑</button>
+                        data-act="comment-input" data-post-id="${post.id}">
+                    <button class="post-comment-send" data-act="send-comment" data-post-id="${post.id}">↑</button>
                 </div>
             </div>
         </div>`;
@@ -205,31 +226,56 @@ function applyReactionUI(likeBtn, disBtn, liked, disliked, likes, dislikes) {
 }
 
 // ── Комментарии ──────────────────────────────────────────────
+// ВАЖНО: страницы Лента и Профиль рендерятся одновременно и используют
+// одну функцию makePostCard → в DOM могут существовать ДУБЛИКАТЫ
+// id="post-comments-XXX". Поэтому ищем элементы scoped — внутри той
+// карточки поста, на кнопку которой реально кликнули.
+
+function postCardOf(el) {
+    return el?.closest?.('.post') || null;
+}
+
 async function toggleComments(postId, btn) {
-    const box = document.getElementById(`post-comments-${postId}`);
-    if (!box) return;
-    const opening = box.style.display === 'none';
-    box.style.display = opening ? 'block' : 'none';
+    const card = postCardOf(btn);
+    const box = card
+        ? card.querySelector('.post-comments')
+        : document.querySelector(`#post-comments-${postId}`);
+    if (!box) {
+        console.warn('[toggleComments] box not found for', postId);
+        return;
+    }
+
+    // Переключаем класс — CSS делает остальное (никаких inline-стилей)
+    const opening = !box.classList.contains('open');
+    box.classList.toggle('open', opening);
+
     if (opening) {
-        await loadComments(postId);
-        document.getElementById(`post-comment-input-${postId}`)?.focus();
+        await loadComments(postId, card);
+        const input = card
+            ? card.querySelector('.post-comment-input')
+            : box.querySelector('.post-comment-input');
+        // Скроллим к открытому блоку, чтобы пользователь увидел его
+        box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        // Фокус с задержкой, чтобы не конфликтовать со скроллом
+        setTimeout(() => input?.focus(), 100);
     }
 }
 
-async function loadComments(postId) {
-    const list = document.getElementById(`post-comments-list-${postId}`);
+async function loadComments(postId, card = null) {
+    const list = (card && card.querySelector('.post-comments-list'))
+        || document.querySelector(`#post-comments-list-${postId}`);
     if (!list) return;
     list.innerHTML = '<div class="post-comments-loading">Загрузка…</div>';
     try {
         const comments = await api.request('GET', `/social/posts/${postId}/comments`, null, true);
-        renderComments(postId, comments);
+        renderComments(postId, comments, list);
     } catch (e) {
         list.innerHTML = `<div class="post-comments-loading">Ошибка загрузки</div>`;
     }
 }
 
-function renderComments(postId, comments) {
-    const list = document.getElementById(`post-comments-list-${postId}`);
+function renderComments(postId, comments, listEl = null) {
+    const list = listEl || document.querySelector(`#post-comments-list-${postId}`);
     if (!list) return;
     if (!comments || comments.length === 0) {
         list.innerHTML = '<div class="post-comments-empty">Пока нет комментариев</div>';
@@ -244,45 +290,68 @@ function makeCommentEl(postId, c) {
     el.className = 'post-comment';
     el.id = `post-comment-${c.id}`;
     const isMine = String(c.user_id) === String(getCurrentUserId());
+    const commentName = c.author_display_name || c.author_name || 'Герой';
+    const commentUsername = c.author_username || '';
+    const avatarHtml = commentUsername
+        ? `<div class="post-comment-avatar post-link" data-act="open-user" data-username="${escapeAttrSafe(commentUsername)}">${avatarFor(c.author_level)}</div>`
+        : `<div class="post-comment-avatar">${avatarFor(c.author_level)}</div>`;
+    const nameHtml = commentUsername
+        ? `<span class="post-comment-name post-link" data-act="open-user" data-username="${escapeAttrSafe(commentUsername)}">${escapeHtml(commentName)}</span>`
+        : `<span class="post-comment-name">${escapeHtml(commentName)}</span>`;
+
     el.innerHTML = `
-        <div class="post-comment-avatar">${avatarFor(c.author_level)}</div>
+        ${avatarHtml}
         <div class="post-comment-body">
             <div class="post-comment-head">
-                <span class="post-comment-name">${escapeHtml(c.author_name || 'Герой')}</span>
+                ${nameHtml}
                 <span class="post-comment-time">${relTime(c.created_at)}</span>
                 ${isMine ? `<button class="post-comment-del" title="Удалить"
-                    onclick="deleteFeedComment('${postId}','${c.id}')">✕</button>` : ''}
+                    data-act="delete-comment" data-post-id="${postId}" data-comment-id="${c.id}">✕</button>` : ''}
             </div>
             <div class="post-comment-text">${escapeHtml(c.content)}</div>
         </div>`;
     return el;
 }
 
-async function sendComment(postId) {
-    const input = document.getElementById(`post-comment-input-${postId}`);
-    const content = input?.value?.trim();
+async function sendComment(postId, sourceEl = null) {
+    // Находим карточку поста, в которой реально кликнули/набрали Enter
+    const card = sourceEl ? postCardOf(sourceEl) : null;
+    const input = (card && card.querySelector('.post-comment-input'))
+        || document.getElementById(`post-comment-input-${postId}`);
+    if (!input) return;
+    const content = input.value.trim();
     if (!content) return;
     input.disabled = true;
     try {
         const res = await api.request('POST', `/social/posts/${postId}/comments`, { content }, true);
-        const list = document.getElementById(`post-comments-list-${postId}`);
+        const list = (card && card.querySelector('.post-comments-list'))
+            || document.getElementById(`post-comments-list-${postId}`);
         const empty = list.querySelector('.post-comments-empty');
         if (empty) list.innerHTML = '';
         list.appendChild(makeCommentEl(postId, res));
         input.value = '';
-        // обновляем счётчик
-        bumpCommentCount(postId, +1);
+        // обновляем счётчик в этой же карточке
+        bumpCommentCount(postId, +1, card);
     } catch (e) { showToast(e.message, true); }
     finally { input.disabled = false; input.focus(); }
 }
 
-async function deleteFeedComment(postId, commentId) {
-    if (!confirm('Удалить комментарий?')) return;
+async function deleteFeedComment(postId, commentId, sourceEl = null) {
+    const ok = await confirmModal({
+        title: 'Удалить комментарий?',
+        message: 'Комментарий будет удалён без возможности восстановления.',
+        confirmText: 'Удалить',
+        danger: true,
+    });
+    if (!ok) return;
+
+    const card = sourceEl ? postCardOf(sourceEl) : null;
     try {
         await api.request('DELETE', `/social/posts/${postId}/comments/${commentId}`, null, true);
-        document.getElementById(`post-comment-${commentId}`)?.remove();
-        bumpCommentCount(postId, -1);
-        const list = document.getElementById(`post-comments-list-${postId}`);
+        document.querySelectorAll(`#post-comment-${commentId}`).forEach(el => el.remove());
+        bumpCommentCount(postId, -1, card);
+        const list = (card && card.querySelector('.post-comments-list'))
+            || document.getElementById(`post-comments-list-${postId}`);
         if (list && list.children.length === 0) {
             list.innerHTML = '<div class="post-comments-empty">Пока нет комментариев</div>';
         }
@@ -290,18 +359,26 @@ async function deleteFeedComment(postId, commentId) {
     } catch (e) { showToast(e.message, true); }
 }
 
-function bumpCommentCount(postId, delta) {
-    const el = document.querySelector(`.post-cc-${postId}`);
-    if (el) el.textContent = Math.max(0, (parseInt(el.textContent, 10) || 0) + delta);
+function bumpCommentCount(postId, delta, card = null) {
+    // Обновляем счётчик во ВСЕХ карточках с этим post id (лента + профиль)
+    document.querySelectorAll(`.post-cc-${postId}`).forEach(el => {
+        el.textContent = Math.max(0, (parseInt(el.textContent, 10) || 0) + delta);
+    });
     const p = feedPosts.find(x => String(x.id) === String(postId));
     if (p) p.comments_count = Math.max(0, (p.comments_count || 0) + delta);
 }
 
 async function deletePost(postId) {
-    if (!confirm('Удалить пост? Это действие необратимо.')) return;
+    const ok = await confirmModal({
+        title: 'Удалить пост?',
+        message: 'Пост будет удалён вместе с лайками и комментариями. Это нельзя отменить.',
+        confirmText: 'Удалить',
+        danger: true,
+    });
+    if (!ok) return;
     try {
         await api.request('DELETE', `/social/posts/${postId}`, null, true);
-        document.getElementById(`post-${postId}`)?.remove();
+        document.querySelectorAll(`#post-${postId}`).forEach(el => el.remove());
         feedPosts = feedPosts.filter(p => String(p.id) !== String(postId));
         if (feedPosts.length === 0) renderFeed();
         showToast('Пост удалён');
@@ -468,7 +545,6 @@ async function loadFriends() {
 }
 
 function renderFriends() {
-    // Рендерим в оба контейнера: десктопный рейл и мобильную вкладку
     const lists = [
         document.getElementById('friends-list-rail'),
         document.getElementById('friends-list'),
@@ -481,13 +557,18 @@ function renderFriends() {
         list.innerHTML = '';
         friends.forEach(f => {
             const level = f.character?.level || 1;
+            const username = f.username || f.character?.username || '';
+            const name = f.character?.display_name || f.character?.character_name || 'Герой';
             const item = document.createElement('div');
             item.className = 'friend-item';
+            const clickableAttrs = username
+                ? `data-act="open-user" data-username="${escapeAttrSafe(username)}" class="friend-clickable"`
+                : '';
             item.innerHTML = `
-                <div class="friend-avatar">${avatarFor(level)}</div>
-                <div class="friend-info">
-                    <div class="friend-name">${escapeHtml(f.character?.character_name || 'Герой')}</div>
-                    <div class="friend-level">Lvl ${level} · ${f.character?.rank || 'Warrior'}</div>
+                <div class="friend-avatar ${username ? 'post-link' : ''}" ${clickableAttrs}>${avatarFor(level)}</div>
+                <div class="friend-info ${username ? 'post-link' : ''}" ${clickableAttrs}>
+                    <div class="friend-name">${escapeHtml(name)}</div>
+                    <div class="friend-level">Lvl ${level} · ${f.character?.rank || 'Warrior'}${username ? ` · @${escapeHtml(username)}` : ''}</div>
                 </div>
                 <button class="btn-ping" onclick="sendPing('${f.user_id}')" title="Мотивационный пинг">💪</button>`;
             list.appendChild(item);
@@ -539,38 +620,64 @@ document.getElementById('send-friend-request')?.addEventListener('click',
 document.getElementById('send-friend-request-m')?.addEventListener('click',
     () => submitFriendRequest('friend-email-m', 'friend-error-m'));
 
+
 // ════════════════════════════════════════════════════════════════
-// ПРОФИЛЬ (использует makePostCard)
+// ДЕЛЕГАЦИЯ СОБЫТИЙ
+// Все клики/keydown по постам и комментариям ловим на document-уровне
+// через data-act атрибуты. Это надёжнее, чем onclick="" в шаблонах,
+// и работает для всех постов сразу (Лента, Профиль, чужой профиль).
 // ════════════════════════════════════════════════════════════════
 
-async function loadProfile() {
-    try {
-        const profile = await api.request('GET', '/social/profile', null, true);
-        renderProfile(profile);
-    } catch (e) { console.error(e); }
-}
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-act]');
+    if (!target) return;
+    const act = target.dataset.act;
+    const postId = target.dataset.postId;
+    const commentId = target.dataset.commentId;
 
-function renderProfile(profile) {
-    const char = profile.character;
-    document.getElementById('profile-avatar').textContent = avatarFor(char.level);
-    document.getElementById('profile-char-name').textContent = char.character_name || 'Герой';
-    document.getElementById('profile-rank').textContent = char.rank || 'Warrior';
-    document.getElementById('profile-email').textContent = profile.user?.email || '';
-    document.getElementById('profile-level').textContent = char.level || 1;
-    document.getElementById('profile-friends').textContent = profile.friends_count || 0;
-
-    if (typeof character !== 'undefined' && character) {
-        document.getElementById('profile-credits').textContent = character.credits;
-        document.getElementById('profile-streak').textContent = character.current_streak;
+    switch (act) {
+        case 'toggle-comments':
+            e.preventDefault();
+            e.stopPropagation();
+            toggleComments(postId, target);
+            break;
+        case 'send-comment':
+            e.preventDefault();
+            sendComment(postId, target);
+            break;
+        case 'delete-comment':
+            e.preventDefault();
+            deleteFeedComment(postId, commentId, target);
+            break;
+        case 'react-like':
+            e.preventDefault();
+            reactPost(postId, 'like', target);
+            break;
+        case 'react-dislike':
+            e.preventDefault();
+            reactPost(postId, 'dislike', target);
+            break;
+        case 'delete-post':
+            e.preventDefault();
+            deletePost(postId);
+            break;
+        case 'open-user':
+            e.preventDefault();
+            const username = target.dataset.username;
+            if (typeof openUserProfile === 'function') openUserProfile(username);
+            break;
     }
+});
 
-    const postsList = document.getElementById('profile-posts-list');
-    if (!profile.posts || profile.posts.length === 0) {
-        postsList.innerHTML = `<div class="feed-empty">
-            <div class="feed-empty-icon">📝</div><p>Нет постов</p>
-        </div>`;
-        return;
-    }
-    postsList.innerHTML = '';
-    profile.posts.forEach(post => postsList.appendChild(makePostCard(post)));
-}
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const target = e.target.closest('[data-act="comment-input"]');
+    if (!target) return;
+    e.preventDefault();
+    sendComment(target.dataset.postId, target);
+});
+
+// ════════════════════════════════════════════════════════════════
+// ПРОФИЛЬ — логика вынесена в profile.js. makePostCard, avatarFor,
+// escapeHtml, relTime остаются глобальными и используются оттуда.
+// ════════════════════════════════════════════════════════════════

@@ -4,8 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.database import engine
 from app import models
-from app.routers import auth, tasks, character, goals, habits, shop, social, challenges
-from app.routers import oauth
+from app.routers import (
+    auth, tasks, character, goals, habits, shop,
+    social, challenges, oauth, profile,
+)
 from app.services.shop_seed import seed_shop
 from app.database import AsyncSessionLocal
 
@@ -28,6 +30,7 @@ app.include_router(habits.router)
 app.include_router(shop.router)
 app.include_router(social.router)
 app.include_router(challenges.router)
+app.include_router(profile.router)
 
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend"
 app.mount("/", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")

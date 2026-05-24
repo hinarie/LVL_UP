@@ -1,34 +1,239 @@
 <div id="page-profile" class="page">
     <div class="profile-wrap">
-        <div class="profile-hero">
-            <div class="profile-avatar" id="profile-avatar">🐣</div>
-            <div class="profile-info">
-                <div class="profile-name" id="profile-char-name">Герой</div>
-                <div class="profile-rank" id="profile-rank">Warrior</div>
-                <div class="profile-email" id="profile-email"></div>
-            </div>
-            <div class="profile-stats">
-                <div class="profile-stat">
-                    <div class="profile-stat-val" id="profile-level">1</div>
-                    <div class="profile-stat-lbl">Уровень</div>
+
+        <!-- ═══ ШАПКА ГЕРОЯ ═══ -->
+        <section class="profile-hero">
+            <div class="profile-hero-bg" id="profile-hero-bg"></div>
+
+            <div class="profile-hero-content">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar" id="profile-avatar">🐣</div>
+                    <button class="profile-avatar-edit" id="profile-avatar-edit" title="Сменить аватар">✎</button>
                 </div>
-                <div class="profile-stat">
+
+                <div class="profile-id">
+                    <div class="profile-name-row">
+                        <h1 class="profile-char-name" id="profile-char-name">Герой</h1>
+                        <button class="profile-edit-btn" id="profile-edit-name" title="Изменить">✎</button>
+                    </div>
+                    <div class="profile-display-name" id="profile-display-name"></div>
+                    <div class="profile-meta">
+                        <span class="profile-rank-chip" id="profile-rank">Warrior</span>
+                        <span class="profile-dot">·</span>
+                        <span class="profile-since" id="profile-since"></span>
+                    </div>
+                    <div class="profile-email" id="profile-email"></div>
+                </div>
+
+                <!-- Прогресс-бар уровня -->
+                <div class="profile-level-card">
+                    <div class="profile-level-top">
+                        <div class="profile-level-big">
+                            <span class="profile-level-label">УРОВЕНЬ</span>
+                            <span class="profile-level-num" id="profile-level">1</span>
+                        </div>
+                        <div class="profile-level-xp" id="profile-level-xp">0 / 1000 XP</div>
+                    </div>
+                    <div class="profile-xp-bar">
+                        <div class="profile-xp-fill" id="profile-xp-fill" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточки статистики -->
+            <div class="profile-statgrid">
+                <div class="profile-stat-card">
+                    <div class="profile-stat-icon">🔥</div>
+                    <div class="profile-stat-val" id="profile-streak">0</div>
+                    <div class="profile-stat-lbl">Стрик</div>
+                </div>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-icon">⚡</div>
+                    <div class="profile-stat-val" id="profile-xp-total">0</div>
+                    <div class="profile-stat-lbl">Всего XP</div>
+                </div>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-icon">💰</div>
                     <div class="profile-stat-val gold" id="profile-credits">0</div>
                     <div class="profile-stat-lbl">Кредиты</div>
                 </div>
-                <div class="profile-stat">
-                    <div class="profile-stat-val fire" id="profile-streak">0</div>
-                    <div class="profile-stat-lbl">Стрик 🔥</div>
-                </div>
-                <div class="profile-stat">
+                <div class="profile-stat-card">
+                    <div class="profile-stat-icon">👥</div>
                     <div class="profile-stat-val cyan" id="profile-friends">0</div>
                     <div class="profile-stat-lbl">Друзей</div>
                 </div>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-icon">🏆</div>
+                    <div class="profile-stat-val" id="profile-ach-count">0/0</div>
+                    <div class="profile-stat-lbl">Достижений</div>
+                </div>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-icon">⚔️</div>
+                    <div class="profile-stat-val" id="profile-tasks-done">0</div>
+                    <div class="profile-stat-lbl">Задач</div>
+                </div>
             </div>
+        </section>
+
+        <!-- ═══ ТАБЫ ═══ -->
+        <nav class="profile-tabs" id="profile-tabs">
+            <button class="profile-tab active" data-tab="overview">📊 Обзор</button>
+            <button class="profile-tab" data-tab="custom">🎨 Кастомизация</button>
+            <button class="profile-tab" data-tab="achievements">🏆 Достижения</button>
+            <button class="profile-tab" data-tab="history">📜 История</button>
+            <button class="profile-tab" data-tab="posts">📝 Посты</button>
+        </nav>
+
+        <!-- ═══ ОБЗОР ═══ -->
+        <section class="profile-pane active" id="profile-pane-overview">
+            <div class="profile-cards-row">
+                <div class="profile-mini">
+                    <div class="profile-mini-title">📅 Сегодня</div>
+                    <div class="profile-mini-val"><span id="overview-xp-today">0</span> <span class="muted">/ <span id="overview-xp-cap">200</span> XP</span></div>
+                    <div class="profile-mini-bar"><div class="profile-mini-fill" id="overview-xp-today-fill"></div></div>
+                </div>
+                <div class="profile-mini">
+                    <div class="profile-mini-title">🌋 Рекорд стрика</div>
+                    <div class="profile-mini-val"><span id="overview-longest">0</span> <span class="muted">дней</span></div>
+                </div>
+                <div class="profile-mini">
+                    <div class="profile-mini-title">🌱 Привычки</div>
+                    <div class="profile-mini-val"><span id="overview-habits-active">0</span> <span class="muted">актив.</span></div>
+                    <div class="profile-mini-sub"><span id="overview-habit-marks">0</span> отметок</div>
+                </div>
+                <div class="profile-mini">
+                    <div class="profile-mini-title">🎯 Цели</div>
+                    <div class="profile-mini-val"><span id="overview-goals-done">0</span> <span class="muted">/ <span id="overview-goals-total">0</span></span></div>
+                </div>
+                <div class="profile-mini">
+                    <div class="profile-mini-title">🏆 Ивенты</div>
+                    <div class="profile-mini-val"><span id="overview-challenges">0</span> <span class="muted">участий</span></div>
+                </div>
+                <div class="profile-mini">
+                    <div class="profile-mini-title">🎒 Инвентарь</div>
+                    <div class="profile-mini-val"><span id="overview-items">0</span> <span class="muted">шт.</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ КАСТОМИЗАЦИЯ ═══ -->
+        <section class="profile-pane" id="profile-pane-custom">
+            <div class="profile-section-head">
+                <h3>🎒 Инвентарь</h3>
+                <p>Здесь вся твоя добыча из магазина. Нажми «Надеть», чтобы применить.</p>
+            </div>
+
+            <div class="profile-inv-filters" id="profile-inv-filters">
+                <button class="profile-inv-filter active" data-cat="">Все</button>
+                <button class="profile-inv-filter" data-cat="theme">🎨 Темы</button>
+                <button class="profile-inv-filter" data-cat="background">🖼 Фоны</button>
+                <button class="profile-inv-filter" data-cat="frame">🔲 Рамки</button>
+                <button class="profile-inv-filter" data-cat="clothing">👕 Одежда</button>
+                <button class="profile-inv-filter" data-cat="hairstyle">💇 Причёски</button>
+                <button class="profile-inv-filter" data-cat="artifact">🧪 Артефакты</button>
+            </div>
+
+            <div class="profile-inv-grid" id="profile-inv-grid">
+                <div class="profile-inv-empty">
+                    <div class="profile-inv-empty-icon">🎒</div>
+                    <p>Инвентарь пуст. Загляни в Магазин!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ ДОСТИЖЕНИЯ ═══ -->
+        <section class="profile-pane" id="profile-pane-achievements">
+            <div class="profile-section-head">
+                <h3>🏆 Достижения</h3>
+                <p><span id="ach-unlocked">0</span> из <span id="ach-total">0</span> открыто</p>
+            </div>
+
+            <div class="profile-ach-grid" id="profile-ach-grid"></div>
+        </section>
+
+        <!-- ═══ ИСТОРИЯ ═══ -->
+        <section class="profile-pane" id="profile-pane-history">
+            <div class="profile-section-head">
+                <h3>📜 История</h3>
+                <p>За что ты получал(а) награды и куда уходили кредиты.</p>
+            </div>
+
+            <div class="profile-history-controls">
+                <div class="profile-history-tabs" id="profile-history-tabs">
+                    <button class="profile-history-tab active" data-htype="xp">⚡ XP</button>
+                    <button class="profile-history-tab" data-htype="credits">💰 Кредиты</button>
+                </div>
+                <select class="profile-history-range" id="profile-history-range">
+                    <option value="7">7 дней</option>
+                    <option value="30" selected>30 дней</option>
+                    <option value="90">90 дней</option>
+                </select>
+            </div>
+
+            <div class="profile-history-summary" id="profile-history-summary"></div>
+
+            <div class="profile-history-list" id="profile-history-list">
+                <div class="profile-history-empty">Загрузка…</div>
+            </div>
+        </section>
+
+        <!-- ═══ ПОСТЫ ═══ -->
+        <section class="profile-pane" id="profile-pane-posts">
+            <div class="profile-section-head">
+                <h3>📝 Мои посты</h3>
+                <p>Всё что ты публиковал(а) в ленте и из ивентов.</p>
+            </div>
+            <div id="profile-posts-list" class="posts-list">
+                <div class="feed-empty">
+                    <div class="feed-empty-icon">📝</div>
+                    <p>Пока нет постов</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Модалка редактирования имени персонажа -->
+<div id="profile-name-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Изменить профиль</h3>
+            <button class="modal-close" data-close="profile-name-modal">✕</button>
         </div>
-        <div class="profile-posts-section">
-            <h3 class="profile-section-title">📝 Мои посты</h3>
-            <div id="profile-posts-list" class="posts-list"></div>
+        <div class="field">
+            <label>Username <span class="field-hint-inline">@ник — уникальный, для друзей</span></label>
+            <input id="edit-username" type="text" maxlength="30" placeholder="anna_2024" autocomplete="off">
+            <div id="username-hint" class="username-hint username-hint-muted" style="display:none"></div>
+        </div>
+        <div class="field">
+            <label>Имя пользователя <span class="field-hint-inline">как вас называть</span></label>
+            <input id="edit-display-name" type="text" maxlength="100" placeholder="Анна 🌸">
+        </div>
+        <div class="field">
+            <label>Имя персонажа <span class="field-hint-inline">в RPG</span></label>
+            <input id="edit-character-name" type="text" maxlength="100" placeholder="Лучница Эйра">
+        </div>
+        <div class="error-msg" id="edit-profile-error"></div>
+        <button class="btn-primary" id="save-profile-name">Сохранить</button>
+    </div>
+</div>
+
+<!-- Модалка выбора аватара -->
+<div id="profile-avatar-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Выбери аватар</h3>
+            <button class="modal-close" data-close="profile-avatar-modal">✕</button>
+        </div>
+        <div class="avatar-picker" id="avatar-picker"></div>
+        <div class="field" style="margin-top:16px">
+            <label>…или вставь ссылку на свою картинку</label>
+            <input id="edit-avatar-url" type="url" maxlength="500" placeholder="https://…">
+        </div>
+        <div class="error-msg" id="edit-avatar-error"></div>
+        <div class="modal-actions">
+            <button class="btn-ghost" id="reset-avatar">Сбросить</button>
+            <button class="btn-primary" id="save-avatar">Сохранить</button>
         </div>
     </div>
 </div>
