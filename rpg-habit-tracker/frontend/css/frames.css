@@ -1,0 +1,146 @@
+.profile-avatar-wrap.frame-silver .profile-avatar {
+    border-color: #c0c8d0 !important;
+    box-shadow: 0 0 0 3px #5a6470, 0 0 12px rgba(192, 200, 208, 0.4) !important;
+}
+
+.profile-avatar-wrap.frame-gold .profile-avatar {
+    border-color: #fcd34d !important;
+    box-shadow: 0 0 0 3px #b45309, 0 0 16px rgba(252, 211, 77, 0.6) !important;
+    animation: gold-shimmer 3s ease-in-out infinite;
+}
+@keyframes gold-shimmer {
+    0%, 100% { box-shadow: 0 0 0 3px #b45309, 0 0 12px rgba(252, 211, 77, 0.5); }
+    50%      { box-shadow: 0 0 0 3px #d97706, 0 0 28px rgba(252, 211, 77, 0.9); }
+}
+
+.profile-avatar-wrap.frame-fire {
+    border-radius: 50%;
+}
+.profile-avatar-wrap.frame-fire .profile-avatar {
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 0 3px #dc2626, 0 0 24px rgba(251, 146, 60, 0.7) !important;
+    position: relative;
+    z-index: 2;
+}
+.profile-avatar-wrap.frame-fire::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #fbbf24, #f97316, #dc2626, #f97316, #fbbf24, #dc2626, #fbbf24
+    );
+    filter: blur(8px);
+    animation: frame-rotate 4s linear infinite;
+    opacity: 0.9;
+    z-index: 0;
+}
+
+.profile-avatar-wrap.frame-ice .profile-avatar {
+    border-color: #bae6fd !important;
+    box-shadow: 0 0 0 3px #0369a1, 0 0 18px rgba(186, 230, 253, 0.7) !important;
+    animation: ice-glint 4s ease-in-out infinite;
+}
+@keyframes ice-glint {
+    0%, 100% { box-shadow: 0 0 0 3px #0369a1, 0 0 14px rgba(186, 230, 253, 0.5); }
+    50%      { box-shadow: 0 0 0 3px #0284c7, 0 0 32px rgba(186, 230, 253, 0.95); }
+}
+
+.profile-avatar-wrap.frame-rainbow {
+    border-radius: 50%;
+}
+.profile-avatar-wrap.frame-rainbow .profile-avatar {
+    border-color: #fff !important;
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.4) !important;
+    position: relative;
+    z-index: 2;
+}
+.profile-avatar-wrap.frame-rainbow::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #ef4444, #f59e0b, #facc15, #10b981, #06b6d4, #6366f1, #a855f7, #ec4899, #ef4444
+    );
+    filter: blur(6px);
+    animation: frame-rotate 6s linear infinite;
+    z-index: 0;
+}
+
+@keyframes frame-rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.shop-card.preview-frame .shop-card-icon {
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    margin: 8px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    background: var(--bg-primary);
+    position: relative;
+    border: 3px solid transparent;
+}
+.shop-card.preview-frame.frame-silver .shop-card-icon {
+    border-color: #c0c8d0;
+    box-shadow: 0 0 0 3px #5a6470;
+}
+.shop-card.preview-frame.frame-gold .shop-card-icon {
+    border-color: #fcd34d;
+    box-shadow: 0 0 0 3px #b45309, 0 0 12px rgba(252, 211, 77, 0.5);
+}
+.shop-card.preview-frame.frame-fire .shop-card-icon {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 3px #dc2626, 0 0 16px rgba(251, 146, 60, 0.7);
+    z-index: 2;
+}
+.shop-card.preview-frame.frame-fire {
+    position: relative;
+    isolation: isolate;
+}
+.shop-card.preview-frame.frame-fire .shop-card-icon::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #fbbf24, #f97316, #dc2626, #f97316, #fbbf24, #dc2626, #fbbf24
+    );
+    filter: blur(6px);
+    animation: frame-rotate 4s linear infinite;
+    z-index: -1;
+    opacity: 0.85;
+}
+.shop-card.preview-frame.frame-ice .shop-card-icon {
+    border-color: #bae6fd;
+    box-shadow: 0 0 0 3px #0369a1, 0 0 14px rgba(186, 230, 253, 0.6);
+}
+.shop-card.preview-frame.frame-rainbow {
+    position: relative;
+    isolation: isolate;
+}
+.shop-card.preview-frame.frame-rainbow .shop-card-icon {
+    border-color: #fff;
+    z-index: 2;
+}
+.shop-card.preview-frame.frame-rainbow .shop-card-icon::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #ef4444, #f59e0b, #facc15, #10b981, #06b6d4, #6366f1, #a855f7, #ec4899, #ef4444
+    );
+    filter: blur(5px);
+    animation: frame-rotate 6s linear infinite;
+    z-index: -1;
+}

@@ -53,6 +53,7 @@ async function initApp() {
             '/js/goals.js',
             '/js/habits.js',
             '/js/shop.js',
+            '/js/cosmetics.js',
             '/js/social.js',
             '/js/profile.js',
             '/js/user-profile.js',

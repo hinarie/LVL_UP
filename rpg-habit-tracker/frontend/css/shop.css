@@ -124,3 +124,54 @@
 @media (max-width: 400px) {
     .shop-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ────────── Превью в карточках магазина ────────── */
+
+/* Тема — три цветных полоски */
+.theme-preview {
+    display: flex;
+    gap: 4px;
+    width: 80px;
+    height: 70px;
+    margin: 8px auto;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.theme-preview-swatch {
+    flex: 1;
+    transition: transform 0.2s ease;
+}
+.shop-card:hover .theme-preview-swatch:nth-child(2) { transform: scaleY(1.1); }
+
+/* Фон — кружок-миниатюра */
+.bg-preview {
+    width: 70px;
+    height: 70px;
+    margin: 8px auto;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Рамка — эмодзи внутри превью-рамки. Иконка уже округлена из frames.css */
+
+/* DEV: кнопка пополнения для тестов. Удали перед продакшеном. */
+.dev-grant-btn {
+    margin-left: 10px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+.dev-grant-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+.dev-grant-btn:active { transform: translateY(0); }

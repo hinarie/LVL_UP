@@ -1,21 +1,10 @@
-// ════════════════════════════════════════════════════════════════
-// USER PROFILE — модалка просмотра чужого профиля
-// Открывается через openUserProfile(username) — кликом по имени/аватару
-// в Ленте, в списке друзей, в комментариях и т.п.
-// ════════════════════════════════════════════════════════════════
-
 let userProfileState = {
     currentUsername: null,
     data: null,
     activeTab: 'overview',
 };
 
-const UP_RARITY = { common: 'Обычный', rare: 'Редкий', epic: 'Эпический', legendary: 'Легендарный' };
-const UP_CAT_ICON = { theme: '🎨', background: '🖼', frame: '🔲', clothing: '👕', hairstyle: '💇', face: '😊', artifact: '🧪' };
-
-// ────────────────────────────────────────────────────────────────
-// Создание модалки (один раз)
-// ────────────────────────────────────────────────────────────────
+const UP_CAT_ICON = { theme: '🎨', background: '🖼', frame: '🔲', artifact: '🧪' };
 
 function ensureUserProfileModal() {
     let m = document.getElementById('user-profile-modal');
@@ -39,7 +28,6 @@ function ensureUserProfileModal() {
         if (closeBtn) closeUserProfile();
     });
 
-    // Esc — закрыть
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && m.classList.contains('open')) closeUserProfile();
     });
@@ -63,10 +51,6 @@ function closeUserProfile() {
     userProfileState.data = null;
 }
 
-// ────────────────────────────────────────────────────────────────
-// Загрузка и рендер
-// ────────────────────────────────────────────────────────────────
-
 async function loadUserProfile(username) {
     const body = document.getElementById('up-body');
     if (!body) return;
@@ -89,11 +73,6 @@ function renderUserProfile() {
     if (!data || !body) return;
 
     const ch = data.character;
-    const counts = data.counts || {};
-    const ach = data.achievements || { total: 0, unlocked_count: 0, items: [] };
-    const equipped = data.equipped || [];
-    const posts = data.posts || [];
-
     const name = ch.display_name || ch.character_name || 'Герой';
     const handle = ch.username ? `@${ch.username}` : '';
     const avatar = (function () {
@@ -106,22 +85,30 @@ function renderUserProfile() {
         return typeof avatarFor === 'function' ? avatarFor(ch.level) : '🧑';
     })();
 
+    const frameClass = ch.active_frame ? `up-frame ${ch.active_frame}` : '';
+    const bgClass = ch.active_background ? `up-hero-bg ${ch.active_background}` : 'up-hero-bg';
+
     body.innerHTML = `
-        <div class="up-hero">
-            <div class="up-avatar">${avatar}</div>
-            <div class="up-id">
-                <h2 class="up-name">${escapeHtml(name)}</h2>
-                ${handle ? `<div class="up-handle">${escapeHtml(handle)}</div>` : ''}
-                <div class="up-meta">
-                    <span class="up-rank">${escapeHtml(ch.rank || 'Warrior')}</span>
-                    <span class="up-dot">·</span>
-                    <span class="up-level">Lvl ${ch.level || 1}</span>
-                    <span class="up-dot">·</span>
-                    <span class="up-streak">🔥 ${ch.current_streak || 0}</span>
+        <div class="up-hero-wrap">
+            <div class="${bgClass}"></div>
+            <div class="up-hero">
+                <div class="up-avatar-wrap ${frameClass}">
+                    <div class="up-avatar">${avatar}</div>
                 </div>
-            </div>
-            <div class="up-actions">
-                ${renderFriendshipBtn(data)}
+                <div class="up-id">
+                    <h2 class="up-name">${escapeHtml(name)}</h2>
+                    ${handle ? `<div class="up-handle">${escapeHtml(handle)}</div>` : ''}
+                    <div class="up-meta">
+                        <span class="up-rank">${escapeHtml(ch.rank || 'Warrior')}</span>
+                        <span class="up-dot">·</span>
+                        <span class="up-level">Lvl ${ch.level || 1}</span>
+                        <span class="up-dot">·</span>
+                        <span class="up-streak">🔥 ${ch.current_streak || 0}</span>
+                    </div>
+                </div>
+                <div class="up-actions">
+                    ${renderFriendshipBtn(data)}
+                </div>
             </div>
         </div>
 
@@ -129,13 +116,11 @@ function renderUserProfile() {
             <button class="up-tab ${userProfileState.activeTab === 'overview' ? 'active' : ''}" data-up-tab="overview">📊 Обзор</button>
             <button class="up-tab ${userProfileState.activeTab === 'achievements' ? 'active' : ''}" data-up-tab="achievements">🏆 Достижения</button>
             <button class="up-tab ${userProfileState.activeTab === 'posts' ? 'active' : ''}" data-up-tab="posts">📝 Посты</button>
-            <button class="up-tab ${userProfileState.activeTab === 'gear' ? 'active' : ''}" data-up-tab="gear">🎨 На герое</button>
         </nav>
 
         <div class="up-pane">${renderUserProfilePane()}</div>
     `;
 
-    // Делегация — кнопки и табы
     body.querySelector('#up-tabs')?.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-up-tab]');
         if (!btn) return;
@@ -174,7 +159,6 @@ function renderUserProfilePane() {
     const tab = userProfileState.activeTab;
     if (tab === 'achievements') return renderUserAchievements();
     if (tab === 'posts')        return renderUserPosts();
-    if (tab === 'gear')         return renderUserGear();
     return renderUserOverview();
 }
 
@@ -237,7 +221,6 @@ function renderUserPosts() {
     if (!posts.length) {
         return '<div class="up-empty">📝 Пока нет постов</div>';
     }
-    // Используем makePostCard из social.js
     setTimeout(() => {
         const wrap = document.querySelector('.up-posts');
         if (!wrap || typeof makePostCard !== 'function') return;
@@ -247,33 +230,9 @@ function renderUserPosts() {
     return '<div class="posts-list up-posts"></div>';
 }
 
-function renderUserGear() {
-    const eq = userProfileState.data.equipped || [];
-    if (!eq.length) {
-        return '<div class="up-empty">🎨 Ничего не надето</div>';
-    }
-    return `
-        <div class="up-gear-grid">
-            ${eq.map(item => `
-                <div class="up-gear-card rarity-${item.rarity}">
-                    <div class="up-gear-ic">${UP_CAT_ICON[item.category] || '📦'}</div>
-                    <div class="up-gear-name">${escapeHtml(item.name)}</div>
-                    <div class="up-gear-rar">${UP_RARITY[item.rarity] || item.rarity}</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-// ────────────────────────────────────────────────────────────────
-// Действия друзей по username
-// ────────────────────────────────────────────────────────────────
-
 async function addFriendByUsername(username) {
     if (!username) return;
     try {
-        // На бэке /friends/request принимает email — здесь нужен альтернативный путь.
-        // Пока пробуем послать через email (если есть на странице), иначе показываем сообщение.
         await api.request('POST', '/social/friends/request', { username }, true);
         showToast('Запрос отправлен');
         await loadUserProfile(username);
@@ -318,6 +277,5 @@ async function sendPingByUserId(userId) {
     }
 }
 
-// Экспорт в глобал — чтобы делегация в social.js могла позвать
 window.openUserProfile = openUserProfile;
 window.closeUserProfile = closeUserProfile;

@@ -51,7 +51,6 @@ async def get_shop_items(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Получить все товары магазина."""
     query = select(ShopItem).where(ShopItem.is_available == True)
     if category:
         try:
@@ -62,7 +61,6 @@ async def get_shop_items(
     result = await db.execute(query.order_by(ShopItem.price_credits))
     items = result.scalars().all()
 
-    # Получаем инвентарь пользователя чтобы отметить купленные
     inv_result = await db.execute(
         select(InventoryItem).where(InventoryItem.user_id == current_user.id)
     )
@@ -80,7 +78,6 @@ async def buy_item(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Купить товар за кредиты."""
     item_result = await db.execute(
         select(ShopItem).where(ShopItem.id == item_id, ShopItem.is_available == True)
     )
@@ -95,14 +92,12 @@ async def buy_item(
     if not character:
         raise HTTPException(status_code=404, detail="Персонаж не найден")
 
-    # Проверяем баланс
     if character.credits < item.price_credits:
         raise HTTPException(
             status_code=400,
             detail=f"Недостаточно кредитов. Нужно: {item.price_credits}, есть: {character.credits}"
         )
 
-    # Проверяем — уже куплено (для не-артефактов)
     if item.category != ItemCategory.artifact:
         existing = await db.execute(
             select(InventoryItem).where(
@@ -113,10 +108,8 @@ async def buy_item(
         if existing.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Уже куплено")
 
-    # Списываем кредиты
     character.credits -= item.price_credits
 
-    # Добавляем в инвентарь
     inv_item = InventoryItem(
         id=uuid.uuid4(),
         user_id=current_user.id,
@@ -126,7 +119,6 @@ async def buy_item(
     )
     db.add(inv_item)
 
-    # Логируем транзакцию
     tx = CreditTransaction(
         id=uuid.uuid4(),
         user_id=current_user.id,
@@ -151,7 +143,6 @@ async def get_inventory(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Получить инвентарь пользователя."""
     result = await db.execute(
         select(InventoryItem).where(InventoryItem.user_id == current_user.id)
     )
@@ -163,7 +154,7 @@ async def get_inventory(
             select(ShopItem).where(ShopItem.id == inv.shop_item_id)
         )
         item = item_result.scalar_one_or_none()
-        if item:
+        if item and item.is_available:
             response.append(inv_item_to_dict(inv, item))
     return response
 
@@ -174,7 +165,6 @@ async def use_item(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Использовать артефакт из инвентаря."""
     inv_result = await db.execute(
         select(InventoryItem).where(
             InventoryItem.id == inv_item_id,
@@ -198,15 +188,23 @@ async def use_item(
     message = "Предмет использован"
 
     if item.effect_type == "freeze_streak":
+        if character.freeze_available:
+            raise HTTPException(400, "Зелье заморозки уже активно ❄️")
         character.freeze_available = True
         message = "Зелье заморозки активировано! Стрик защищён на 1 день ❄️"
 
     elif item.effect_type == "double_xp":
+        if character.double_xp_active and character.double_xp_expires_at and \
+           character.double_xp_expires_at > datetime.utcnow():
+            raise HTTPException(400, "Бонус XP уже активен ⚡")
         character.double_xp_active = True
-        character.double_xp_expires_at = datetime.utcnow() + timedelta(
-            minutes=item.effect_duration or 60
-        )
-        message = f"Двойной опыт активирован на {item.effect_duration} минут! ⚡"
+        duration = item.effect_duration or 60
+        character.double_xp_expires_at = datetime.utcnow() + timedelta(minutes=duration)
+        if duration >= 60:
+            t = f"{duration // 60} ч." if duration % 60 == 0 else f"{duration // 60} ч. {duration % 60} мин."
+        else:
+            t = f"{duration} мин."
+        message = f"x2 XP активирован на {t}! ⚡"
 
     inv.quantity -= 1
     inv.used_at = datetime.utcnow()
@@ -223,7 +221,6 @@ async def equip_item(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Надеть/применить косметический предмет."""
     inv_result = await db.execute(
         select(InventoryItem).where(
             InventoryItem.id == inv_item_id,
@@ -236,13 +233,19 @@ async def equip_item(
 
     item_result = await db.execute(select(ShopItem).where(ShopItem.id == inv.shop_item_id))
     item = item_result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Товар не найден")
 
     char_result = await db.execute(
         select(Character).where(Character.user_id == current_user.id)
     )
     character = char_result.scalar_one_or_none()
+    if not character:
+        raise HTTPException(status_code=404, detail="Персонаж не найден")
 
-    # Снимаем текущий предмет той же категории
+    if item.category == ItemCategory.artifact:
+        raise HTTPException(400, "Артефакты используются, а не надеваются")
+
     same_cat_result = await db.execute(
         select(InventoryItem)
         .join(ShopItem, InventoryItem.shop_item_id == ShopItem.id)
@@ -250,6 +253,7 @@ async def equip_item(
             InventoryItem.user_id == current_user.id,
             InventoryItem.is_equipped == True,
             ShopItem.category == item.category,
+            InventoryItem.id != inv.id,
         )
     )
     for old_inv in same_cat_result.scalars().all():
@@ -257,7 +261,6 @@ async def equip_item(
 
     inv.is_equipped = not inv.is_equipped
 
-    # Применяем к персонажу
     if item.category == ItemCategory.theme:
         character.active_theme = item.asset_key if inv.is_equipped else "default"
     elif item.category == ItemCategory.background:
@@ -270,3 +273,40 @@ async def equip_item(
         "message": "Надето" if inv.is_equipped else "Снято",
         "is_equipped": inv.is_equipped,
     }
+
+
+from pydantic import BaseModel
+
+
+class GrantRequest(BaseModel):
+    amount: int = 1000
+
+
+@router.post("/dev/grant-credits")
+async def dev_grant_credits(
+    data: GrantRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if data.amount < 1 or data.amount > 10000:
+        raise HTTPException(400, "Сумма должна быть от 1 до 10000")
+
+    char_result = await db.execute(
+        select(Character).where(Character.user_id == current_user.id)
+    )
+    character = char_result.scalar_one_or_none()
+    if not character:
+        raise HTTPException(404, "Персонаж не найден")
+
+    character.credits += data.amount
+    db.add(CreditTransaction(
+        id=uuid.uuid4(),
+        user_id=current_user.id,
+        amount=data.amount,
+        source=CreditSource.admin,
+        source_id=None,
+        description=f"Тестовое пополнение",
+        balance_after=character.credits,
+    ))
+    await db.commit()
+    return {"message": f"+{data.amount} ₡", "credits": character.credits}

@@ -1,0 +1,107 @@
+.profile-hero-bg.bg-stars,
+.up-hero-bg.bg-stars {
+    background:
+        radial-gradient(2px 2px at 20% 30%, #fff, transparent 50%),
+        radial-gradient(1px 1px at 40% 70%, #fff, transparent 50%),
+        radial-gradient(1.5px 1.5px at 60% 20%, #fff, transparent 50%),
+        radial-gradient(1px 1px at 80% 60%, #fff, transparent 50%),
+        radial-gradient(2px 2px at 30% 80%, #aab, transparent 50%),
+        radial-gradient(1.5px 1.5px at 90% 40%, #fff, transparent 50%),
+        radial-gradient(1px 1px at 50% 50%, #ccd, transparent 50%),
+        radial-gradient(2px 2px at 15% 90%, #fff, transparent 50%),
+        radial-gradient(1px 1px at 70% 90%, #aab, transparent 50%),
+        linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%) !important;
+    background-size: 200px 200px, 150px 150px, 250px 250px, 180px 180px,
+                     220px 220px, 200px 200px, 160px 160px, 240px 240px,
+                     190px 190px, 100% 100% !important;
+    animation: stars-twinkle 6s ease-in-out infinite;
+    opacity: 1 !important;
+}
+@keyframes stars-twinkle {
+    0%, 100% { filter: brightness(0.9); }
+    50%      { filter: brightness(1.1); }
+}
+
+.profile-hero-bg.bg-aurora,
+.up-hero-bg.bg-aurora {
+    background: #050a14 !important;
+    opacity: 1 !important;
+    overflow: hidden;
+}
+.profile-hero-bg.bg-aurora::before,
+.up-hero-bg.bg-aurora::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 60% 80% at 30% 50%, rgba(34, 197, 94, 0.5), transparent 60%),
+        radial-gradient(ellipse 50% 70% at 70% 40%, rgba(168, 85, 247, 0.45), transparent 60%),
+        radial-gradient(ellipse 40% 60% at 50% 60%, rgba(34, 211, 238, 0.4), transparent 60%);
+    filter: blur(20px);
+    animation: aurora-shift 12s ease-in-out infinite;
+}
+@keyframes aurora-shift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -10px) scale(1.05); }
+    66%      { transform: translate(-15px, 12px) scale(0.95); }
+}
+
+.profile-hero-bg.bg-matrix,
+.up-hero-bg.bg-matrix {
+    background:
+        linear-gradient(180deg, transparent 0%, rgba(34, 197, 94, 0.18) 50%, transparent 100%),
+        repeating-linear-gradient(0deg,
+            transparent 0,
+            transparent 14px,
+            rgba(34, 197, 94, 0.55) 14px,
+            rgba(34, 197, 94, 0.55) 16px),
+        #000 !important;
+    background-size: 20px 100%, 20px 28px, 100% 100% !important;
+    animation: matrix-fall 4s linear infinite;
+    opacity: 1 !important;
+}
+@keyframes matrix-fall {
+    from { background-position: 0 0, 0 0, 0 0; }
+    to   { background-position: 0 0, 0 200%, 0 0; }
+}
+
+.profile-hero-bg.bg-cosmos,
+.up-hero-bg.bg-cosmos {
+    background:
+        radial-gradient(ellipse 70% 50% at 25% 35%, rgba(168, 85, 247, 0.55), transparent 60%),
+        radial-gradient(ellipse 50% 70% at 75% 65%, rgba(236, 72, 153, 0.5), transparent 60%),
+        radial-gradient(ellipse 40% 30% at 60% 20%, rgba(34, 211, 238, 0.4), transparent 60%),
+        radial-gradient(1px 1px at 15% 20%, #fff, transparent 50%),
+        radial-gradient(1.5px 1.5px at 85% 30%, #fff, transparent 50%),
+        radial-gradient(1px 1px at 40% 80%, #fff, transparent 50%),
+        radial-gradient(2px 2px at 70% 70%, #fff, transparent 50%),
+        radial-gradient(1px 1px at 90% 90%, #aab, transparent 50%),
+        linear-gradient(135deg, #050514 0%, #0a0420 100%) !important;
+    background-size: 100% 100%, 100% 100%, 100% 100%,
+                     200px 200px, 180px 180px, 220px 220px, 250px 250px, 190px 190px, 100% 100% !important;
+    animation: cosmos-drift 30s ease-in-out infinite;
+    opacity: 1 !important;
+}
+@keyframes cosmos-drift {
+    0%, 100% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    50%      { background-position: 10px 5px, -10px 8px, 5px -5px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+}
+
+.profile-hero-bg.bg-sunset,
+.up-hero-bg.bg-sunset {
+    background:
+        radial-gradient(ellipse 100% 60% at 50% 80%, rgba(251, 146, 60, 0.6), transparent 70%),
+        radial-gradient(ellipse 80% 40% at 50% 90%, rgba(251, 191, 36, 0.55), transparent 65%),
+        linear-gradient(180deg,
+            #1a0e2e 0%,
+            #3d1654 30%,
+            #7a2548 55%,
+            #c14d3c 80%,
+            #f59e0b 100%) !important;
+    animation: sunset-pulse 8s ease-in-out infinite;
+    opacity: 1 !important;
+}
+@keyframes sunset-pulse {
+    0%, 100% { filter: brightness(1) saturate(1); }
+    50%      { filter: brightness(1.08) saturate(1.1); }
+}

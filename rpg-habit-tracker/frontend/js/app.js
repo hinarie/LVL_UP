@@ -65,6 +65,9 @@ async function onPageShown(page) {
                 break;
             case 'profile':
                 await loadProfile();
+                if (typeof applyCosmetics === 'function' && character) {
+                    applyCosmetics(character);
+                }
                 break;
             case 'shop':
                 await loadShop();

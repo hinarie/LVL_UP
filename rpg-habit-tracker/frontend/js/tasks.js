@@ -7,6 +7,8 @@ async function loadCharacter() {
     try {
         character = await api.request('GET', '/character/', null, true);
         renderCharacter();
+        // Применяем активную тему/фон/рамку. Функция определена в cosmetics.js
+        if (typeof applyCosmetics === 'function') applyCosmetics(character);
     } catch (e) { console.error('Ошибка загрузки персонажа:', e); }
 }
 
