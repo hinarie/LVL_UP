@@ -205,14 +205,3 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
         loadShop();
     });
 });
-
-document.addEventListener('click', async (e) => {
-    if (e.target.id !== 'dev-grant-btn') return;
-    try {
-        const result = await api.request('POST', '/shop/dev/grant-credits',
-            { amount: 1000 }, true);
-        showToast(result.message);
-        await loadCharacter();
-        await loadShop();
-    } catch (err) { showToast(err.message, true); }
-});
