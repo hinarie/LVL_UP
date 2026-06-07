@@ -1,4 +1,3 @@
-
 let profileState = {
     profileData:  null,
     stats:        null,
@@ -118,7 +117,7 @@ function setUsernameHint(text, kind = 'muted') {
 function setAvatarDisplay(avatar_url, level) {
     const av = document.getElementById('profile-avatar');
     if (!av) return;
-    if (avatar_url && /^https?:\/\
+    if (avatar_url && /^https?:\/\//.test(avatar_url)) {
         av.innerHTML = `<img src="${escapeAttr(avatar_url)}" alt="avatar" onerror="this.parentElement.textContent='${escapeAttr(avatar_url.length <= 4 ? avatar_url : '')}'">`;
     } else if (avatar_url && avatar_url.length <= 4) {
 

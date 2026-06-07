@@ -1,6 +1,3 @@
-
-const NOTIF_POLL_MS = 30_000;
-
 const notifState = {
     items: [],
     unreadCount: 0,
@@ -65,7 +62,7 @@ function notifContent(n) {
 
 function notifIconHtml(n, fallbackEmoji) {
     const url = n.actor?.avatar_url;
-    if (url && /^https?:\/\
+    if (url && /^https?:\/\//.test(url)) {
         return `<img src="${escapeAttrSafe(url)}" alt="">`;
     }
     if (url && url.length <= 4) {

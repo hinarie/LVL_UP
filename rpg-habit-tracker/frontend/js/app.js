@@ -1,25 +1,43 @@
 async function loadApp() {
+    let user;
     try {
-        const user = await api.me();
-        window.MY_USER_ID = user.id;
-        showScreen('app-screen');
-        document.getElementById('user-email').textContent = user.email;
-        initNavigation();
-        await loadCharacter();
-        await loadTasks();
-        await loadGoals();
-        await loadHabits();
-        await loadShop();
-        await loadFeed();
-        await loadFriendRequests();
-        await loadFriends();
-        await loadProfile();
-        initChallenges();
-        if (typeof initNotifications === 'function') initNotifications();
-    } catch {
+        user = await api.me();
+    } catch (e) {
+        console.error('Авторизация не удалась:', e);
         api.clearToken();
         showScreen('auth-screen');
+        return;
     }
+
+    window.MY_USER_ID = user.id;
+    showScreen('app-screen');
+    const emailEl = document.getElementById('user-email');
+    if (emailEl) emailEl.textContent = user.email;
+    initNavigation();
+
+    const steps = [
+        ['loadCharacter', loadCharacter],
+        ['loadTasks', loadTasks],
+        ['loadGoals', loadGoals],
+        ['loadHabits', loadHabits],
+        ['loadShop', loadShop],
+        ['loadFeed', loadFeed],
+        ['loadFriendRequests', loadFriendRequests],
+        ['loadFriends', loadFriends],
+        ['loadProfile', loadProfile],
+    ];
+    for (const [name, fn] of steps) {
+        try {
+            if (typeof fn === 'function') await fn();
+        } catch (e) {
+            console.error(`Ошибка загрузки (${name}):`, e);
+        }
+    }
+
+    try { initChallenges(); } catch (e) { console.error('initChallenges:', e); }
+    try {
+        if (typeof initNotifications === 'function') initNotifications();
+    } catch (e) { console.error('initNotifications:', e); }
 }
 
 function initNavigation() {
