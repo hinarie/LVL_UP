@@ -1,4 +1,4 @@
-// Загружает HTML-фрагменты и инициализирует приложение
+
 async function loadFragment(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Не удалось загрузить ${url}`);
@@ -10,7 +10,7 @@ async function initApp() {
     const modRoot = document.getElementById('modals-root');
 
     try {
-        // Загружаем все фрагменты параллельно
+
         const [
             authHtml,
             appHtml,
@@ -35,17 +35,13 @@ async function initApp() {
             loadFragment('/partials/modals.html'),
         ]);
 
-        // Собираем страницы в app-main
         const pagesHtml = dailyHtml + goalsHtml + habitsHtml + shopHtml
             + challengesHtml + feedHtml + profileHtml;
 
-        // Вставляем основной контент
         root.innerHTML = authHtml + appHtml.replace('{{pages}}', pagesHtml);
 
-        // Вставляем модалки
         modRoot.innerHTML = modalsHtml;
 
-        // Подгружаем скрипты последовательно
         await loadScripts([
             '/js/confirm.js',
             '/js/auth.js',
@@ -94,7 +90,6 @@ function loadScripts(urls) {
     }, Promise.resolve());
 }
 
-// Стили загрузочного экрана
 const style = document.createElement('style');
 style.textContent = `
     .app-loading {

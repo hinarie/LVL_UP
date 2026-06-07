@@ -1,7 +1,4 @@
-/* ════════════════════════════════════════════════════════════════
-   ЛЕНТА — редизайн в стиле Threads: одна центральная колонка,
-   sticky-хедер с табами, компактный композер, минимум рамок.
-════════════════════════════════════════════════════════════════ */
+
 
 #page-feed {
     align-items: stretch;
@@ -11,7 +8,6 @@
     position: relative;
 }
 
-/* Полноэкранный 3-зонный лейаут (как X/Threads): рейлы + центральная лента */
 .feed-grid {
     display: grid;
     grid-template-columns: minmax(240px, 300px) minmax(0, 640px) minmax(240px, 320px);
@@ -55,7 +51,6 @@
     padding: 0 20px 80px;
 }
 
-/* ── Sticky-хедер ───────────────────────────────────────────── */
 .feed-top {
     position: sticky;
     top: 0;
@@ -95,7 +90,6 @@
 }
 .feed-refresh:hover { color: var(--accent-purple-bright); border-color: var(--accent-purple); transform: rotate(90deg); }
 
-/* ── Табы Лента / Друзья (только мобилка) ───────────────────── */
 .feed-tabs { display: none; gap: 4px; }
 
 .feed-tab {
@@ -132,14 +126,10 @@
     justify-content: center;
 }
 
-/* ── Панели вкладок ─────────────────────────────────────────── */
 .feed-pane { display: none; padding-top: 14px; }
 .feed-pane.active { display: block; animation: feed-fade 0.25s ease; }
 @keyframes feed-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-/* ════════════════════════════════════════════════════════════════
-   КОМПОЗЕР
-════════════════════════════════════════════════════════════════ */
 .composer {
     display: flex;
     gap: 12px;
@@ -168,7 +158,7 @@
     border: none;
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 16px;          /* 16px чтобы iOS не зумил при фокусе */
+    font-size: 16px;
     line-height: 1.5;
     resize: none;
     outline: none;
@@ -177,7 +167,6 @@
 }
 .composer-input::placeholder { color: var(--text-muted); }
 
-/* Действия скрыты, пока композер не раскрыт */
 .composer-actions {
     display: none;
     align-items: center;
@@ -215,9 +204,6 @@
 .composer-submit:hover { background: var(--accent-purple-bright); }
 .composer-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ════════════════════════════════════════════════════════════════
-   ПОСТ (Threads-style: аватар + колонка)
-════════════════════════════════════════════════════════════════ */
 .posts-list { display: flex; flex-direction: column; }
 
 .post {
@@ -318,8 +304,6 @@
 .post-act-ico { font-size: 15px; line-height: 1; transition: transform 0.2s; }
 .post-act.pop .post-act-ico { transform: scale(1.4); }
 
-/* ── Комментарии под постом ленты ───────────────────────────── */
-/* По умолчанию скрыто; класс .open показывает блок. */
 .post-comments {
     display: none;
     margin-top: 10px;
@@ -331,7 +315,6 @@
 .post-comments-loading,
 .post-comments-empty { font-size: 12px; color: var(--text-muted); padding: 4px 0; }
 
-/* Кликабельные имена/аватары — ведут в чужой профиль */
 .post-link { cursor: pointer; transition: opacity 0.15s ease; }
 .post-link:hover { opacity: 0.75; }
 .post-handle {
@@ -395,9 +378,6 @@
 }
 .post-comment-send:hover { border-color: var(--accent-purple); background: var(--bg-card-hover); }
 
-/* ════════════════════════════════════════════════════════════════
-   ВКЛАДКА ДРУЗЬЯ
-════════════════════════════════════════════════════════════════ */
 .friends-block {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -524,7 +504,6 @@
 }
 .btn-decline:hover { border-color: var(--accent-red); color: var(--accent-red); }
 
-/* ── Пустое состояние ───────────────────────────────────────── */
 .feed-empty {
     text-align: center;
     color: var(--text-muted);
@@ -533,7 +512,6 @@
 .feed-empty-icon { font-size: 40px; margin-bottom: 12px; }
 .feed-empty p { font-size: 14px; line-height: 1.6; }
 
-/* ── FAB (плавающая кнопка нового поста) — только мобилка ────── */
 .feed-fab {
     display: none;
     position: fixed;
@@ -554,9 +532,6 @@
 .feed-fab:hover { background: var(--accent-purple-bright); }
 .feed-fab:active { transform: scale(0.92); }
 
-/* ════════════════════════════════════════════════════════════════
-   ПРОФИЛЬ (сохранён, использует .post карточки)
-════════════════════════════════════════════════════════════════ */
 #page-profile {
     flex-direction: column;
     align-items: stretch;
@@ -606,11 +581,6 @@
 .profile-posts-section { display: flex; flex-direction: column; gap: 4px; }
 .profile-section-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
 
-/* ════════════════════════════════════════════════════════════════
-   АДАПТИВ
-════════════════════════════════════════════════════════════════ */
-
-/* Ниже 1100px рейлы прячем, лента — одна центральная колонка с табами */
 @media (max-width: 1099px) {
     .feed-grid { grid-template-columns: minmax(0, 640px); justify-content: center; }
     .feed-rail { display: none; }
@@ -629,14 +599,11 @@
     .profile-stats { justify-content: center; }
 }
 
-/* ── Аватар-картинка (avatar_url из профиля) ──────────────────── */
-/* Контейнеры аватаров обрезают вложенную картинку по кругу. */
 .post-avatar,
 .post-comment-avatar,
 .composer-avatar,
 .friend-avatar { overflow: hidden; }
 
-/* Картинка заполняет круглый контейнер без искажений. */
 .avatar-img {
     width: 100%;
     height: 100%;

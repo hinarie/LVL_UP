@@ -19,7 +19,6 @@ from app.models.challenges import (
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-
 def task_to_response(task: DailyTask) -> dict:
     return {
         "id": str(task.id),
@@ -35,13 +34,11 @@ def task_to_response(task: DailyTask) -> dict:
         "created_at": task.created_at,
     }
 
-
 @router.get("/")
 async def get_tasks(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Обычные задачи + задачи из активных ивентов где участвует пользователь."""
     result = await db.execute(
         select(DailyTask)
         .where(DailyTask.user_id == current_user.id)
@@ -51,7 +48,6 @@ async def get_tasks(
     tasks = result.scalars().all()
     response = [task_to_response(t) for t in tasks]
 
-    # Добавляем задачи из активных ивентов
     parts_result = await db.execute(
         select(ChallengeParticipant).where(
             ChallengeParticipant.user_id == current_user.id
@@ -61,7 +57,7 @@ async def get_tasks(
 
     now = datetime.utcnow()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    today_weekday = now.weekday()  # 0=пн..6=вс
+    today_weekday = now.weekday()
 
     for p in participations:
         ch_result = await db.execute(
@@ -81,13 +77,11 @@ async def get_tasks(
         ch_tasks = tasks_result.scalars().all()
 
         for ct in ch_tasks:
-            # Проверяем custom_days
             if ct.repeat_type.value == "custom_days" and ct.custom_days:
                 allowed = [int(d) for d in ct.custom_days.split(",") if d.strip().isdigit()]
                 if today_weekday not in allowed:
                     continue
 
-            # Выполнена ли сегодня (для daily/custom_days)
             is_done = False
             timer_started_at = None
             completion_id = None
@@ -117,7 +111,6 @@ async def get_tasks(
                     timer_started_at = comp.timer_started_at
                     completion_id = str(comp.id)
 
-            # Временное окно
             in_window = True
             if ct.available_from_hour is not None and ct.available_until_hour is not None:
                 in_window = ct.available_from_hour <= now.hour < ct.available_until_hour
@@ -134,7 +127,6 @@ async def get_tasks(
                 "is_timer_running": bool(timer_started_at and not is_done),
                 "completed_at": None,
                 "created_at": ct.created_at.isoformat(),
-                # Дополнительные поля для ивент-задач
                 "source": "challenge",
                 "challenge_id": str(challenge.id),
                 "challenge_title": challenge.title,
@@ -147,14 +139,12 @@ async def get_tasks(
 
     return response
 
-
 @router.post("/", status_code=201)
 async def create_task(
     data: TaskCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Создать новую ежедневную задачу."""
     config = DIFFICULTY_CONFIG[data.difficulty.value]
     task = DailyTask(
         id=uuid.uuid4(),
@@ -172,14 +162,12 @@ async def create_task(
     await db.refresh(task)
     return task_to_response(task)
 
-
 @router.post("/{task_id}/start-timer")
 async def start_timer(
     task_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Запустить таймер задачи."""
     result = await db.execute(
         select(DailyTask).where(
             DailyTask.id == task_id,
@@ -199,14 +187,12 @@ async def start_timer(
     await db.commit()
     return {"message": "Таймер запущен", "started_at": task.timer_started_at}
 
-
 @router.post("/{task_id}/complete")
 async def complete_task(
     task_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Отметить задачу выполненной (с проверкой таймера)."""
     result = await db.execute(
         select(DailyTask).where(
             DailyTask.id == task_id,
@@ -219,7 +205,6 @@ async def complete_task(
     if task.status == TaskStatus.done:
         raise HTTPException(status_code=400, detail="Задача уже выполнена")
 
-    # Проверка античита — таймер должен истечь
     if task.timer_started_at:
         elapsed = datetime.utcnow() - task.timer_started_at
         required = timedelta(minutes=task.duration_minutes)
@@ -230,7 +215,6 @@ async def complete_task(
                 detail=f"Время ещё не вышло! Осталось {remaining_seconds // 60} мин {remaining_seconds % 60} сек",
             )
 
-    # Получаем персонажа для начисления XP
     char_result = await db.execute(
         select(Character).where(Character.user_id == current_user.id)
     )
@@ -255,14 +239,12 @@ async def complete_task(
     await db.commit()
     return {**task_to_response(task), "xp_result": xp_result}
 
-
 @router.post("/{task_id}/undone")
 async def undone_task(
     task_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Откатить случайно выполненную задачу."""
     result = await db.execute(
         select(DailyTask).where(
             DailyTask.id == task_id,
@@ -297,7 +279,6 @@ async def undone_task(
 
     await db.commit()
     return {"message": "Задача возвращена в активные", **task_to_response(task)}
-
 
 @router.delete("/{task_id}")
 async def delete_task(

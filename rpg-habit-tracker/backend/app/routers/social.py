@@ -15,7 +15,6 @@ from app.services import notification_service as notif_svc
 
 router = APIRouter(prefix="/social", tags=["social"])
 
-
 def char_to_dict(char: Character, user: User = None) -> dict:
     if not char:
         return {}
@@ -30,15 +29,12 @@ def char_to_dict(char: Character, user: User = None) -> dict:
         "current_streak": char.current_streak,
     }
 
-
 async def _actor_name(db: AsyncSession, user: User) -> str:
-    """Имя инициатора события для текста уведомления (display_name или username)."""
     ch_res = await db.execute(select(Character).where(Character.user_id == user.id))
     ch = ch_res.scalar_one_or_none()
     if ch and ch.display_name:
         return ch.display_name
     return user.username or "Герой"
-
 
 def post_to_dict(post: Post, author_char: Character, my_reaction=None,
                  likes: int = 0, dislikes: int = 0, comments_count: int = 0,
@@ -61,14 +57,11 @@ def post_to_dict(post: Post, author_char: Character, my_reaction=None,
         "comments_count": comments_count,
     }
 
-
 @router.get("/feed")
 async def get_feed(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Лента — публичные посты + посты друзей."""
-    # ID друзей
     friends_result = await db.execute(
         select(Friendship).where(
             Friendship.status == FriendshipStatus.accepted,
@@ -86,7 +79,6 @@ async def get_feed(
         else:
             friend_ids.add(f.requester_id)
 
-    # Посты: публичные + свои + от друзей
     posts_result = await db.execute(
         select(Post)
         .where(
@@ -106,7 +98,6 @@ async def get_feed(
 
     post_ids = [p.id for p in posts]
 
-    # Реакции текущего пользователя (по этим постам)
     my_react_result = await db.execute(
         select(PostReaction).where(
             PostReaction.user_id == current_user.id,
@@ -115,7 +106,6 @@ async def get_feed(
     )
     my_reaction_by_post = {str(r.post_id): r.reaction_type for r in my_react_result.scalars().all()}
 
-    # Все реакции по этим постам одним запросом → счётчики like/dislike
     all_react_result = await db.execute(
         select(PostReaction).where(PostReaction.post_id.in_(post_ids))
     )
@@ -126,7 +116,6 @@ async def get_feed(
         else:
             likes_by_post[str(r.post_id)] = likes_by_post.get(str(r.post_id), 0) + 1
 
-    # Кол-во комментариев одним запросом
     comments_result = await db.execute(
         select(PostComment).where(PostComment.post_id.in_(post_ids))
     )
@@ -134,7 +123,6 @@ async def get_feed(
     for c in comments_result.scalars().all():
         comments_by_post[str(c.post_id)] = comments_by_post.get(str(c.post_id), 0) + 1
 
-    # Batch-загрузка авторов: characters + users одним проходом
     author_user_ids = list({p.user_id for p in posts})
     chars_result = await db.execute(
         select(Character).where(Character.user_id.in_(author_user_ids))
@@ -163,7 +151,6 @@ async def get_feed(
 
     return sorted(response, key=lambda p: str(p["created_at"]), reverse=True)
 
-
 @router.post("/posts", status_code=201)
 async def create_post(
     data: PostCreate,
@@ -188,9 +175,7 @@ async def create_post(
     return post_to_dict(post, char, my_reaction=None, likes=0, dislikes=0, comments_count=0,
                         author_user=current_user)
 
-
 async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
-    """Лайк/дизлайк взаимоисключающие. Повторный клик по той же реакции снимает её."""
     if rtype not in ("like", "dislike"):
         raise HTTPException(400, "Неверный тип реакции")
 
@@ -203,7 +188,7 @@ async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
     reaction = existing.scalar_one_or_none()
 
     my_reaction = None
-    became_like = False  # ставим уведомление автору только когда лайк ПОЯВИЛСЯ
+    became_like = False
     if reaction is None:
         db.add(PostReaction(
             id=uuid.uuid4(), post_id=post_id, user_id=user_id, reaction_type=rtype,
@@ -211,16 +196,13 @@ async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
         my_reaction = rtype
         became_like = (rtype == "like")
     elif reaction.reaction_type == rtype:
-        # тот же тип → снимаем
         await db.delete(reaction)
         my_reaction = None
     else:
-        # переключаем like<->dislike
         reaction.reaction_type = rtype
         my_reaction = rtype
         became_like = (rtype == "like")
 
-    # Уведомление автору поста — только при первом появлении лайка
     if became_like:
         post_res = await db.execute(select(Post).where(Post.id == post_id))
         post = post_res.scalar_one_or_none()
@@ -241,7 +223,6 @@ async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
 
     await db.commit()
 
-    # Свежие счётчики
     all_r = await db.execute(select(PostReaction).where(PostReaction.post_id == post_id))
     likes = dislikes = 0
     for r in all_r.scalars().all():
@@ -251,7 +232,6 @@ async def _apply_reaction(db, post_id, user_id, rtype: str) -> dict:
             likes += 1
     return {"my_reaction": my_reaction, "liked": my_reaction == "like",
             "likes": likes, "dislikes": dislikes}
-
 
 @router.post("/posts/{post_id}/react")
 async def react_post(
@@ -263,16 +243,13 @@ async def react_post(
     rtype = (data or {}).get("type", "like")
     return await _apply_reaction(db, post_id, current_user.id, rtype)
 
-
 @router.post("/posts/{post_id}/like")
 async def toggle_like(
     post_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Обратная совместимость — лайк через старый путь
     return await _apply_reaction(db, post_id, current_user.id, "like")
-
 
 @router.delete("/posts/{post_id}")
 async def delete_post(
@@ -290,11 +267,6 @@ async def delete_post(
     await db.commit()
     return {"message": "Пост удалён"}
 
-
-# ════════════════════════════════════════════════════════════════
-# Комментарии под постами ленты
-# ════════════════════════════════════════════════════════════════
-
 @router.get("/posts/{post_id}/comments")
 async def list_comments(
     post_id: str,
@@ -307,7 +279,6 @@ async def list_comments(
     )
     comments = res.scalars().all()
 
-    # Имена авторов одним батчем
     author_ids = list({c.user_id for c in comments})
     info = {}
     if author_ids:
@@ -332,14 +303,13 @@ async def list_comments(
         "id": str(c.id),
         "content": c.content,
         "user_id": str(c.user_id),
-        "author_name":         info.get(str(c.user_id), {}).get("name", "Герой"),
+        "author_name": info.get(str(c.user_id), {}).get("name", "Герой"),
         "author_display_name": info.get(str(c.user_id), {}).get("display_name", "Герой"),
-        "author_username":     info.get(str(c.user_id), {}).get("username"),
-        "author_level":        info.get(str(c.user_id), {}).get("level", 1),
-        "author_avatar_url":   info.get(str(c.user_id), {}).get("avatar_url"),
+        "author_username": info.get(str(c.user_id), {}).get("username"),
+        "author_level": info.get(str(c.user_id), {}).get("level", 1),
+        "author_avatar_url": info.get(str(c.user_id), {}).get("avatar_url"),
         "created_at": c.created_at,
     } for c in comments]
-
 
 @router.post("/posts/{post_id}/comments", status_code=201)
 async def add_comment(
@@ -365,7 +335,6 @@ async def add_comment(
     )
     db.add(comment)
 
-    # Уведомление автору поста (если автор не сам себе комментит)
     if str(post.user_id) != str(current_user.id):
         commenter_name = await _actor_name(db, current_user)
         await notif_svc.notify_post_commented(
@@ -387,14 +356,13 @@ async def add_comment(
         "id": str(comment.id),
         "content": comment.content,
         "user_id": str(comment.user_id),
-        "author_name":         char.character_name if char else "Герой",
+        "author_name": char.character_name if char else "Герой",
         "author_display_name": char.display_name if char else "Герой",
-        "author_username":     current_user.username,
-        "author_level":        char.level if char else 1,
-        "author_avatar_url":   char.avatar_url if char else None,
+        "author_username": current_user.username,
+        "author_level": char.level if char else 1,
+        "author_avatar_url": char.avatar_url if char else None,
         "created_at": comment.created_at,
     }
-
 
 @router.delete("/posts/{post_id}/comments/{comment_id}")
 async def delete_comment(
@@ -413,14 +381,12 @@ async def delete_comment(
     await db.commit()
     return {"deleted": True, "id": str(comment_id)}
 
-
 @router.post("/friends/request")
 async def send_friend_request(
     data: dict,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Принимает либо addressee_email, либо username."""
     target = None
 
     email = (data.get("addressee_email") or "").strip().lower()
@@ -454,7 +420,6 @@ async def send_friend_request(
             raise HTTPException(400, "Вы уже друзья")
         if fr.status == FriendshipStatus.pending:
             raise HTTPException(400, "Запрос уже отправлен")
-        # declined → можно отправить заново: пересоздаём
         await db.delete(fr)
         await db.flush()
 
@@ -466,7 +431,6 @@ async def send_friend_request(
     )
     db.add(friendship)
 
-    # Уведомление получателю запроса
     sender_name = await _actor_name(db, current_user)
     await notif_svc.notify_friend_request(
         db,
@@ -480,14 +444,12 @@ async def send_friend_request(
     label = username or email
     return {"message": f"Запрос отправлен пользователю {label}"}
 
-
 @router.post("/friends/cancel")
 async def cancel_friend_request(
     data: dict,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Отменяет свой исходящий запрос (по username или user_id)."""
     username = (data.get("username") or "").strip().lower()
     user_id = data.get("user_id")
     target = None
@@ -514,14 +476,12 @@ async def cancel_friend_request(
     await db.commit()
     return {"message": "Запрос отменён"}
 
-
 @router.post("/friends/remove")
 async def remove_friend(
     data: dict,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Убирает дружбу с пользователем (по username или user_id)."""
     username = (data.get("username") or "").strip().lower()
     user_id = data.get("user_id")
     target = None
@@ -549,7 +509,6 @@ async def remove_friend(
     await db.delete(fr)
     await db.commit()
     return {"message": "Удалён из друзей"}
-
 
 @router.get("/friends/requests")
 async def get_friend_requests(
@@ -579,7 +538,6 @@ async def get_friend_requests(
         })
     return response
 
-
 @router.post("/friends/{friendship_id}/accept")
 async def accept_friend(
     friendship_id: str,
@@ -597,7 +555,6 @@ async def accept_friend(
         raise HTTPException(status_code=404, detail="Запрос не найден")
     friendship.status = FriendshipStatus.accepted
 
-    # Уведомление инициатору запроса — «твой запрос приняли»
     accepter_name = await _actor_name(db, current_user)
     await notif_svc.notify_friend_accepted(
         db,
@@ -609,7 +566,6 @@ async def accept_friend(
 
     await db.commit()
     return {"message": "Запрос принят! Теперь вы друзья 🎉"}
-
 
 @router.post("/friends/{friendship_id}/decline")
 async def decline_friend(
@@ -629,7 +585,6 @@ async def decline_friend(
     friendship.status = FriendshipStatus.declined
     await db.commit()
     return {"message": "Запрос отклонён"}
-
 
 @router.get("/friends")
 async def get_friends(
@@ -662,7 +617,6 @@ async def get_friends(
         })
     return response
 
-
 @router.post("/ping/{user_id}")
 async def send_ping(
     user_id: str,
@@ -689,7 +643,6 @@ async def send_ping(
 
     await db.commit()
     return {"message": "Мотивационный пинг отправлен! 💪"}
-
 
 @router.get("/profile")
 async def get_my_profile(
@@ -740,12 +693,11 @@ async def get_my_profile(
             author_user=current_user,
         ))
 
-    # Добавляем посты из ивентов (cross_posted=True — пользователь сам выбрал)
     ch_posts_result = await db.execute(
         select(ChallengePost).where(
             ChallengePost.user_id == current_user.id,
-            ChallengePost.cross_posted == True,  # noqa
-            ChallengePost.is_auto_generated == False,  # noqa
+            ChallengePost.cross_posted == True,
+            ChallengePost.is_auto_generated == False,
         ).order_by(ChallengePost.created_at.desc()).limit(20)
     )
     for cp in ch_posts_result.scalars().all():

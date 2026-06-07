@@ -2,21 +2,18 @@ from pydantic import BaseModel, validator
 from typing import Optional, List
 from enum import Enum
 
-
 class HabitCategory(str, Enum):
-    health     = "health"
-    learning   = "learning"
+    health = "health"
+    learning = "learning"
     productive = "productive"
-    creative   = "creative"
-    social     = "social"
-    other      = "other"
-
+    creative = "creative"
+    social = "social"
+    other = "other"
 
 class HabitFrequency(str, Enum):
-    daily   = "daily"
+    daily = "daily"
     weekdays = "weekdays"
-    custom  = "custom"
-
+    custom = "custom"
 
 class HabitCreate(BaseModel):
     title: str
@@ -24,9 +21,9 @@ class HabitCreate(BaseModel):
     duration_minutes: Optional[int] = None
     category: HabitCategory = HabitCategory.other
     frequency: HabitFrequency = HabitFrequency.daily
-    frequency_days: Optional[List[int]] = None  # [0,1,2,3,4,5,6] — 0=пн
-    reminder_time: Optional[str] = None  # "morning" | "afternoon" | "evening"
-    color: Optional[str] = None  # hex цвет
+    frequency_days: Optional[List[int]] = None
+    reminder_time: Optional[str] = None
+    color: Optional[str] = None
 
     @validator('title')
     def title_not_empty(cls, v):

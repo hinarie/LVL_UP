@@ -3,40 +3,32 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
-
-# ─── Enums (зеркало моделей) ──────────────────────────────────────────────────
-
 class ChallengeType(str, Enum):
-    public  = "public"
+    public = "public"
     friends = "friends"
     private = "private"
 
-
 class TaskRepeatType(str, Enum):
-    daily       = "daily"
-    once        = "once"
+    daily = "daily"
+    once = "once"
     custom_days = "custom_days"
 
-
 class PostReactionEmoji(str, Enum):
-    fire   = "fire"
+    fire = "fire"
     muscle = "muscle"
-    star   = "star"
-    like   = "like"
-
-
-# ─── ChallengeTask schemas ────────────────────────────────────────────────────
+    star = "star"
+    like = "like"
 
 class ChallengeTaskCreate(BaseModel):
-    title:               str
-    description:         Optional[str] = None
-    xp_reward:           int = Field(25, ge=5, le=200)
-    duration_minutes:    int = Field(15, ge=1, le=480)
+    title: str
+    description: Optional[str] = None
+    xp_reward: int = Field(25, ge=5, le=200)
+    duration_minutes: int = Field(15, ge=1, le=480)
     available_from_hour: Optional[int] = Field(None, ge=0, le=23)
-    available_until_hour:Optional[int] = Field(None, ge=0, le=23)
-    repeat_type:         TaskRepeatType = TaskRepeatType.daily
-    custom_days:         Optional[str] = None
-    score_value:         int = Field(10, ge=1, le=100)
+    available_until_hour: Optional[int] = Field(None, ge=0, le=23)
+    repeat_type: TaskRepeatType = TaskRepeatType.daily
+    custom_days: Optional[str] = None
+    score_value: int = Field(10, ge=1, le=100)
 
     @validator('title')
     def title_not_empty(cls, v):
@@ -51,23 +43,19 @@ class ChallengeTaskCreate(BaseModel):
             raise ValueError('available_until_hour должен быть больше available_from_hour')
         return v
 
-
-# ─── Challenge schemas ────────────────────────────────────────────────────────
-
 class ChallengeCreate(BaseModel):
-    title:                  str
-    description:            Optional[str] = None
-    banner_emoji:           str = "🏆"
-    challenge_type:         ChallengeType = ChallengeType.public
-    required_rank:          Optional[str] = None
-    initial_stake_credits:  int
-    prize_split_1st:        int = Field(50, ge=0, le=100)
-    prize_split_2nd:        int = Field(30, ge=0, le=100)
-    prize_split_3rd:        int = Field(20, ge=0, le=100)
-    starts_at:              datetime
-    ends_at:                datetime
-    # Задачи создаются вместе с ивентом
-    tasks:                  List[ChallengeTaskCreate] = Field(default_factory=list, max_items=10)
+    title: str
+    description: Optional[str] = None
+    banner_emoji: str = "🏆"
+    challenge_type: ChallengeType = ChallengeType.public
+    required_rank: Optional[str] = None
+    initial_stake_credits: int
+    prize_split_1st: int = Field(50, ge=0, le=100)
+    prize_split_2nd: int = Field(30, ge=0, le=100)
+    prize_split_3rd: int = Field(20, ge=0, le=100)
+    starts_at: datetime
+    ends_at: datetime
+    tasks: List[ChallengeTaskCreate] = Field(default_factory=list, max_items=10)
 
     @validator('title')
     def title_not_empty(cls, v):
@@ -104,7 +92,6 @@ class ChallengeCreate(BaseModel):
 
     @validator('starts_at', 'ends_at', pre=True)
     def strip_tz(cls, v):
-        """Убираем timezone — БД хранит TIMESTAMP WITHOUT TIME ZONE."""
         if hasattr(v, 'tzinfo') and v.tzinfo is not None:
             return v.replace(tzinfo=None)
         return v
@@ -114,9 +101,6 @@ class ChallengeCreate(BaseModel):
         if len(v) == 0:
             raise ValueError('Создайте хотя бы одну задачу для ивента')
         return v
-
-
-# ─── Post schemas ─────────────────────────────────────────────────────────────
 
 class ChallengePostCreate(BaseModel):
     content:    str
@@ -131,7 +115,6 @@ class ChallengePostCreate(BaseModel):
         if len(v) > 500:
             raise ValueError('Максимум 500 символов')
         return v
-
 
 class ReactionCreate(BaseModel):
     emoji: PostReactionEmoji = PostReactionEmoji.fire

@@ -2,42 +2,32 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from enum import Enum
 
-
 class Gender(str, Enum):
     male = "male"
     female = "female"
-
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
 
-
 class VerifyOTPRequest(BaseModel):
     email: EmailStr
     otp: str
-
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-
 class OnboardingRequest(BaseModel):
     display_name: str
     character_name: str
     gender: Gender
-    # Опциональный — для обратной совместимости старого фронта.
-    # Если не передан, бэк сам сгенерирует username из email (как было раньше).
-    # Новый фронт передаёт его обязательно — валидируется в роутере.
     username: Optional[str] = None
-
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     is_onboarded: bool
-
 
 class UserResponse(BaseModel):
     id: str

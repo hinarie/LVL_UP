@@ -1,4 +1,4 @@
-/* Layout */
+
 #page-daily {
     height: calc(100dvh - var(--header-h));
     overflow: hidden;
@@ -11,7 +11,6 @@
     width: 100%;
 }
 
-/* Сайдбар персонажа */
 .sidebar {
     background: var(--bg-secondary);
     border-right: 1px solid var(--border);
@@ -140,7 +139,6 @@
     animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Список задач */
 .tasks-main {
     padding: 24px 28px;
     overflow-y: auto;
@@ -163,7 +161,6 @@
     border-bottom: 1px solid var(--border);
 }
 
-/* Карточка задачи */
 .task-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -211,9 +208,6 @@
     display: inline-block;
 }
 
-/* Пока в таймере нет текста (карточка ещё не получила обратный отсчёт) —
-   не показываем пустую серую плашку. Как только startVisualTimer впишет
-   текст, :empty перестаёт срабатывать и плашка появляется. */
 .task-timer:empty {
     display: none !important;
     padding: 0;
@@ -241,7 +235,6 @@
 .btn-undone { background: none; border: 1px solid var(--border); color: var(--text-muted); }
 .btn-undone:hover { border-color: var(--accent-yellow); color: var(--accent-yellow); }
 
-/* Выбор сложности */
 .difficulty-select { display: flex; flex-direction: column; gap: 8px; }
 
 .diff-btn {
@@ -265,7 +258,6 @@
 .diff-name { font-weight: 600; font-size: 14px; flex: 1; color: var(--text-primary); }
 .diff-reward { font-size: 12px; color: var(--accent-purple-bright); }
 
-/* Адаптация */
 @media (max-width: 768px) {
     #page-daily { height: auto; overflow: visible; }
 

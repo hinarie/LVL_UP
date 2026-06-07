@@ -1,17 +1,3 @@
-// ════════════════════════════════════════════════════════════════
-// CONFIRM MODAL — универсальная модалка подтверждения действий
-// Заменяет нативный confirm() красивым диалогом в стиле приложения.
-//
-// Использование:
-//   const ok = await confirmModal({
-//       title: 'Удалить?',
-//       message: 'Это нельзя отменить.',
-//       confirmText: 'Удалить',
-//       cancelText: 'Отмена',
-//       danger: true,            // красная кнопка
-//   });
-//   if (ok) { ... }
-// ════════════════════════════════════════════════════════════════
 
 (function () {
     let activeResolve = null;
@@ -33,14 +19,13 @@
             </div>`;
         document.body.appendChild(overlayEl);
 
-        // Клик по затемнению = отмена
         overlayEl.addEventListener('click', (e) => {
             if (e.target === overlayEl) close(false);
         });
-        // Кнопки
+
         overlayEl.querySelector('[data-confirm-cancel]').addEventListener('click', () => close(false));
         overlayEl.querySelector('[data-confirm-ok]').addEventListener('click', () => close(true));
-        // Esc / Enter
+
         document.addEventListener('keydown', (e) => {
             if (!overlayEl.classList.contains('open')) return;
             if (e.key === 'Escape') { e.preventDefault(); close(false); }
@@ -80,10 +65,9 @@
         iconEl.textContent = icon || (danger ? '⚠️' : '❔');
 
         overlayEl.classList.add('open');
-        // Если ранее уже был открыт диалог — отменим предыдущий
+
         if (activeResolve) activeResolve(false);
 
-        // Фокус на кнопке отмены — безопаснее по умолчанию для деструктивных действий
         setTimeout(() => {
             (danger ? overlayEl.querySelector('[data-confirm-cancel]') : ok).focus();
         }, 50);

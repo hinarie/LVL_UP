@@ -1,13 +1,3 @@
-"""
-Сервис создания уведомлений.
-
-Принципы:
-- create_safe НЕ кидает исключения наружу: если что-то пошло не так,
-  ошибка лога́ется, но основное действие (лайк/коммент/level up) не страдает.
-- Дедупликация для шумных событий (лайки): если за последние N часов
-  тот же актор уже лайкал тот же пост, новое уведомление не создаём.
-- Сами себе уведомления не отправляем (актор == получатель → no-op).
-"""
 import json
 import uuid
 import logging
@@ -21,10 +11,7 @@ from app.models.notification import Notification, NotificationType
 
 log = logging.getLogger(__name__)
 
-# Окно дедупликации для повторных лайков/комментов/пингов от того же
-# актора по той же сущности (в часах)
 DEDUP_WINDOW_HOURS = 6
-
 
 async def create_safe(
     db: AsyncSession,
@@ -36,20 +23,10 @@ async def create_safe(
     payload: Optional[dict] = None,
     dedup: bool = True,
 ) -> Optional[Notification]:
-    """
-    Безопасное создание уведомления. Никогда не кидает — только логит.
-    Возвращает созданный объект или None.
-
-    НЕ коммитит — это делает вызывающий (обычно после своего основного commit
-    или вместе с ним). Если нужно отдельно — вызывайте db.commit() сами.
-    """
     try:
-        # Самому себе не шлём
         if actor_user_id is not None and str(actor_user_id) == str(user_id):
             return None
 
-        # Дедупликация: за DEDUP_WINDOW_HOURS не повторяем то же событие
-        # от того же актора к тому же entity
         if dedup and actor_user_id is not None:
             cutoff = datetime.utcnow() - timedelta(hours=DEDUP_WINDOW_HOURS)
             q = select(Notification).where(
@@ -62,7 +39,6 @@ async def create_safe(
                 q = q.where(Notification.entity_id == str(entity_id))
             existing = (await db.execute(q)).scalar_one_or_none()
             if existing:
-                # Освежим время и сбросим прочитано — пусть всплывёт наверх
                 existing.created_at = datetime.utcnow()
                 existing.is_read = False
                 if payload is not None:
@@ -82,15 +58,9 @@ async def create_safe(
         db.add(notif)
         return notif
     except Exception as e:
-        # Логируем и продолжаем — уведомление не критично для основного действия
         log.warning("Не удалось создать уведомление type=%s user=%s: %s",
                     type, user_id, e)
         return None
-
-
-# ════════════════════════════════════════════════════════════════
-# Удобные шорткаты под конкретные события
-# ════════════════════════════════════════════════════════════════
 
 async def notify_friend_request(db, *, receiver_id, sender_id, sender_username, sender_name):
     return await create_safe(
@@ -102,7 +72,6 @@ async def notify_friend_request(db, *, receiver_id, sender_id, sender_username, 
         payload={"sender_username": sender_username, "sender_name": sender_name},
     )
 
-
 async def notify_friend_accepted(db, *, receiver_id, accepter_id, accepter_username, accepter_name):
     return await create_safe(
         db,
@@ -112,7 +81,6 @@ async def notify_friend_accepted(db, *, receiver_id, accepter_id, accepter_usern
         entity_id=str(accepter_id),
         payload={"accepter_username": accepter_username, "accepter_name": accepter_name},
     )
-
 
 async def notify_ping(db, *, receiver_id, sender_id, sender_username, sender_name, message):
     return await create_safe(
@@ -128,7 +96,6 @@ async def notify_ping(db, *, receiver_id, sender_id, sender_username, sender_nam
         },
     )
 
-
 async def notify_post_liked(db, *, post_owner_id, liker_id, liker_username, liker_name, post_id, post_preview):
     return await create_safe(
         db,
@@ -143,7 +110,6 @@ async def notify_post_liked(db, *, post_owner_id, liker_id, liker_username, like
         },
     )
 
-
 async def notify_post_commented(db, *, post_owner_id, commenter_id, commenter_username,
                                 commenter_name, post_id, comment_preview):
     return await create_safe(
@@ -157,9 +123,8 @@ async def notify_post_commented(db, *, post_owner_id, commenter_id, commenter_us
             "commenter_name": commenter_name,
             "comment_preview": (comment_preview or "")[:120],
         },
-        dedup=False,  # каждый коммент — отдельное событие
+        dedup=False,
     )
-
 
 async def notify_level_up(db, *, user_id, new_level):
     return await create_safe(
@@ -171,7 +136,6 @@ async def notify_level_up(db, *, user_id, new_level):
         payload={"new_level": new_level},
         dedup=False,
     )
-
 
 async def notify_rank_up(db, *, user_id, new_rank):
     return await create_safe(

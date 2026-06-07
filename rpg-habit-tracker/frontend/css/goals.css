@@ -1,4 +1,4 @@
-/* ===== СТРАНИЦА ===== */
+
 #page-goals {
     flex-direction: column;
     align-items: stretch;
@@ -13,7 +13,6 @@
     width: 100%;
 }
 
-/* ===== СТАТИСТИКА ===== */
 .goals-stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -36,11 +35,9 @@
 .goal-stat-val { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
 .goal-stat-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
 
-/* ===== СЕКЦИИ ===== */
 .goal-section { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
 .goals-list-wrap { display: flex; flex-direction: column; }
 
-/* ===== АНИМАЦИЯ ===== */
 @keyframes fadeSlideIn {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -57,7 +54,6 @@
     50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
 }
 
-/* ===== ПУСТОЕ СОСТОЯНИЕ ===== */
 .goals-empty-state {
     display: flex;
     flex-direction: column;
@@ -102,7 +98,6 @@
     box-shadow: 0 4px 20px var(--accent-purple-glow);
 }
 
-/* ===== BOSS CARD ===== */
 .boss-card {
     background: var(--bg-card);
     border: 2px solid var(--accent-purple);
@@ -220,7 +215,6 @@
     border-top: 1px solid var(--border);
 }
 
-/* ===== ПОДЗАДАЧИ (Tweek) ===== */
 .tw-list { display: flex; flex-direction: column; }
 
 .tw-subtask {
@@ -321,14 +315,12 @@
     font-style: italic;
 }
 
-/* ===== GOALS GRID ===== */
 .goals-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
 }
 
-/* ===== GOAL CARD ===== */
 .goal-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -449,7 +441,6 @@
     flex-shrink: 0;
 }
 
-/* Аккордеон */
 .goal-subtasks-panel {
     max-height: 0;
     overflow: hidden;
@@ -462,7 +453,6 @@
     border-top: 1px solid var(--border);
 }
 
-/* Expand / mobile-open */
 .goal-expand-btn {
     padding: 4px 7px;
     background: rgba(124,58,237,0.1);
@@ -493,7 +483,6 @@
     display: none;
 }
 
-/* ===== КНОПКИ ЦЕЛЕЙ ===== */
 .btn-extend {
     padding: 5px 10px;
     background: none;
@@ -538,7 +527,6 @@
     font-weight: 600;
 }
 
-/* ===== АРХИВ ===== */
 .archive-header { display: flex; align-items: center; justify-content: space-between; }
 .archive-toggle { font-size: 10px; color: var(--text-muted); transition: var(--transition); }
 
@@ -565,7 +553,6 @@
 .badge-win  { background: rgba(16,185,129,0.12); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.3); }
 .badge-fail { background: rgba(239,68,68,0.12);  color: var(--accent-red);   border: 1px solid rgba(239,68,68,0.3); }
 
-/* ===== РЕДКОСТЬ ===== */
 .rarity-select { display: flex; flex-direction: column; gap: 6px; }
 
 .rarity-btn {
@@ -589,7 +576,6 @@
 .rarity-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 1px; }
 .rarity-hint { font-size: 11px; color: var(--text-muted); }
 
-/* ===== ЧЕКБОКС ===== */
 .checkbox-label {
     display: flex;
     align-items: center;
@@ -635,7 +621,6 @@
 .checkbox-label:hover { border-color: var(--accent-purple); color: var(--text-primary); }
 .checkbox-label:has(input:checked) { border-color: var(--accent-purple); background: rgba(124,58,237,0.08); color: var(--text-primary); }
 
-/* ===== ПИКЕР ДЕДЛАЙНА ===== */
 .deadline-picker { position: relative; }
 
 .deadline-display {
@@ -741,7 +726,6 @@
 
 .dcal-confirm:hover { background: var(--accent-purple-bright); }
 
-/* ===== BOTTOM SHEET ===== */
 .goal-sheet-overlay {
     display: none;
     position: fixed;
@@ -819,7 +803,6 @@
 
 .goal-sheet-prog-label { font-size: 10px; color: var(--text-muted); text-align: right; margin-bottom: 10px; }
 
-/* ===== АДАПТАЦИЯ ===== */
 @media (max-width: 768px) {
     #page-goals { padding: 16px; height: auto; }
 
@@ -830,7 +813,7 @@
         gap: 10px;
     }
 
-    /* Карточки — компактно */
+
     .goal-card-top    { padding: 10px 10px 0; }
     .goal-card-footer { padding: 6px 0 8px; margin-top: 6px; }
     .goal-card-title  { font-size: 12px; }
@@ -839,20 +822,20 @@
     .goal-deadline    { font-size: 9px; max-width: 65px; }
     .btn-delete       { font-size: 11px; padding: 3px 4px; }
 
-    /* Аккордеон скрыт на мобилке */
+
     .goal-subtasks-panel { display: none !important; }
     .goal-expand-btn     { display: none !important; }
     .goal-mobile-open    { display: flex; }
 
-    /* Boss */
+
     .boss-card  { padding: 16px; }
     .boss-name  { font-size: 15px; }
 
-    /* Подзадачи */
+
     .tw-subtask-xp { display: none; }
     .tw-del        { opacity: 0.4; }
 
-    /* Модалки снизу */
+
     .modal-overlay { align-items: flex-end; padding: 0; }
     .modal { border-radius: var(--radius-lg) var(--radius-lg) 0 0; max-height: 90dvh; }
 }

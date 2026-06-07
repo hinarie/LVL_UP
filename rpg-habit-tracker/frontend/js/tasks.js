@@ -2,12 +2,11 @@ let character = null;
 let tasks = [];
 let activeTimers = {};
 
-// ===== ЗАГРУЗКА ДАННЫХ =====
 async function loadCharacter() {
     try {
         character = await api.request('GET', '/character/', null, true);
         renderCharacter();
-        // Применяем активную тему/фон/рамку. Функция определена в cosmetics.js
+
         if (typeof applyCosmetics === 'function') applyCosmetics(character);
     } catch (e) { console.error('Ошибка загрузки персонажа:', e); }
 }
@@ -19,7 +18,6 @@ async function loadTasks() {
     } catch (e) { console.error('Ошибка загрузки задач:', e); }
 }
 
-// ===== ОТРИСОВКА ПЕРСОНАЖА =====
 function renderCharacter() {
     if (!character) return;
     document.getElementById('char-name').textContent = character.character_name;
@@ -41,7 +39,6 @@ function renderCharacter() {
     if (banner) banner.style.display = character.double_xp_active ? 'block' : 'none';
 }
 
-// ===== ОТРИСОВКА ЗАДАЧ =====
 const DIFF_COLORS = { easy: '#10b981', medium: '#f59e0b', hard: '#ef4444' };
 const DIFF_LABELS = { easy: 'Лёгкая', medium: 'Средняя', hard: 'Сложная' };
 
@@ -51,7 +48,6 @@ function renderTasks() {
     Object.values(activeTimers).forEach(t => clearInterval(t));
     activeTimers = {};
 
-    // Разделяем обычные задачи и задачи из ивентов
     const regularTasks   = tasks.filter(t => !t.source);
     const challengeTasks = tasks.filter(t => t.source === 'challenge');
 
@@ -80,7 +76,6 @@ function renderTasks() {
         });
     }
 
-    // Задачи из ивентов
     if (chActive.length > 0) {
         list.appendChild(makeSectionHeader('🏆 Задачи ивентов', 'challenge-header'));
         chActive.forEach(t => {
@@ -104,7 +99,6 @@ function makeChallengeTaskCard(task) {
     const card = document.createElement('div');
     const isDone = task.status === 'done';
 
-    // Проверяем истёк ли таймер
     let timerExpired = false;
     if (task.is_timer_running && task.timer_started_at) {
         const startStr = task.timer_started_at.endsWith('Z') ? task.timer_started_at : task.timer_started_at + 'Z';
@@ -117,7 +111,6 @@ function makeChallengeTaskCard(task) {
 
     const windowOk = task.in_window !== false;
 
-    // Определяем кнопку действия
     let actionBtn = '';
     if (isDone) {
         actionBtn = '<span style="color:var(--accent-green);font-size:13px;font-weight:600">✓ Готово</span>';
@@ -150,12 +143,10 @@ function makeChallengeTaskCard(task) {
         <div class="task-actions">${actionBtn}</div>
     `;
 
-    // Запускаем таймер если идёт и не истёк
     if (task.is_timer_running && task.timer_started_at && !timerExpired) {
         startVisualTimer(task);
     }
-    // Если таймер истёк — сразу показываем "время вышло".
-    // Карточка ещё не в DOM, поэтому ищем элемент внутри самой card после вставки.
+
     if (timerExpired) {
         requestAnimationFrame(() => {
             const timerEl = card.querySelector(`[id="timer-${task.id}"]`)
@@ -178,12 +169,12 @@ async function startChallengeTask(taskId, challengeId) {
     try {
         const res = await api.request('POST', `/challenges/${challengeId}/tasks/${taskId}/start`, null, true);
         showToast(res.message || 'Таймер запущен! 🎯');
-        // Обновляем задачу локально без полной перезагрузки
+
         const idx = tasks.findIndex(t => t.id === taskId);
         if (idx !== -1) {
             tasks[idx].is_timer_running = true;
             tasks[idx].timer_started_at = res.timer_started_at || new Date().toISOString();
-            // Перерисовываем карточку
+
             const oldCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
             if (oldCard) {
                 const newCard = makeChallengeTaskCard(tasks[idx]);
@@ -202,7 +193,7 @@ async function completeChallengeTask(taskId, challengeId, participantId) {
     try {
         const res = await api.request('POST', `/challenges/${challengeId}/tasks/${taskId}/complete`, null, true);
         showToast(res.message || 'Задача выполнена!');
-        // award_xp возвращает xp_gained (не xp_awarded) — иначе анимация не сработает
+
         const gained = res.xp_result?.xp_gained ?? res.xp_result?.xp_awarded ?? 0;
         if (gained) {
             showXpAnimation(gained);
@@ -212,13 +203,12 @@ async function completeChallengeTask(taskId, challengeId, participantId) {
     } catch (e) { showToast(e.message, true); }
 }
 
-// Красивый диалог подтверждения вместо window.confirm
 function showConfirm(title, subtitle, confirmText = 'Удалить', confirmClass = 'btn-confirm-delete') {
     return new Promise(resolve => {
         const modal = document.getElementById('confirm-modal');
         document.querySelector('.confirm-title').textContent = title;
         document.getElementById('confirm-subtitle').textContent = subtitle || '';
-        
+
         const okBtn = document.getElementById('confirm-ok');
         okBtn.textContent = confirmText;
         okBtn.className = confirmClass;
@@ -266,7 +256,6 @@ function makeTaskCard(task) {
     const label = DIFF_LABELS[task.difficulty];
     const isDone = task.status === 'done';
 
-    // Цветная полоска сложности
     card.style.setProperty('--diff-color', color);
 
     card.innerHTML = `
@@ -304,21 +293,17 @@ function makeTaskCard(task) {
     return card;
 }
 
-// ===== ДОБАВИТЬ КАРТОЧКУ МГНОВЕННО (без перезагрузки) =====
 function addTaskToList(task) {
     const list = document.getElementById('tasks-list');
 
-    // Убираем заглушку если была
     const empty = document.getElementById('tasks-empty');
     if (empty) empty.remove();
 
-    // Ищем существующий заголовок "Активные" — если нет, создаём ОДИН раз
     let activeHeader = list.querySelector('[data-section="active-header"]');
     if (!activeHeader) {
         activeHeader = makeSectionHeader('⚡ Активные');
         activeHeader.dataset.section = 'active-header';
 
-        // Вставляем перед заголовком "Выполнено" если он есть, иначе в начало
         const doneHeader = list.querySelector('[data-section="done-header"]');
         if (doneHeader) {
             list.insertBefore(activeHeader, doneHeader);
@@ -327,15 +312,12 @@ function addTaskToList(task) {
         }
     }
 
-    // Создаём карточку
     const card = makeTaskCard(task);
     card.style.opacity = '0';
     card.style.transform = 'translateY(-12px)';
 
-    // Вставляем сразу после заголовка "Активные"
     activeHeader.after(card);
 
-    // Анимация появления
     requestAnimationFrame(() => {
         card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         card.style.opacity = '1';
@@ -345,7 +327,6 @@ function addTaskToList(task) {
     tasks.unshift(task);
 }
 
-// ===== УДАЛИТЬ КАРТОЧКУ С АНИМАЦИЕЙ =====
 function removeTaskCard(taskId, callback) {
     const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
     if (!card) { callback && callback(); return; }
@@ -367,7 +348,6 @@ function removeTaskCard(taskId, callback) {
         card.remove();
         callback && callback();
 
-        // Проверяем — остались ли задачи
         const list = document.getElementById('tasks-list');
         const remaining = list.querySelectorAll('.task-card');
         if (remaining.length === 0) {
@@ -380,7 +360,6 @@ function removeTaskCard(taskId, callback) {
     }, 550);
 }
 
-// ===== ОБНОВИТЬ КАРТОЧКУ НА МЕСТЕ =====
 function updateTaskCard(task) {
     const oldCard = document.querySelector(`.task-card[data-id="${task.id}"]`);
     if (!oldCard) { renderTasks(); return; }
@@ -398,7 +377,7 @@ function updateTaskCard(task) {
             oldCard.replaceWith(newCard);
             newCard.style.transition = 'opacity 0.2s ease';
             requestAnimationFrame(() => { newCard.style.opacity = '1'; });
-            // Запускаем таймер если нужно
+
             if (task.is_timer_running && task.timer_started_at) {
                 startVisualTimer(task);
             }
@@ -416,11 +395,10 @@ function moveCardToActiveSection(card, task) {
     setTimeout(() => {
         card.remove();
 
-        // Ищем или создаём заголовок "Активные"
         let activeHeader = list.querySelector('[data-section="active-header"]');
         if (!activeHeader) {
             activeHeader = makeSectionHeader('⚡ Активные', 'active-header');
-            // Вставляем перед "Выполнено" если есть, иначе в начало
+
             const doneHeader = list.querySelector('[data-section="done-header"]');
             if (doneHeader) {
                 list.insertBefore(activeHeader, doneHeader);
@@ -429,7 +407,6 @@ function moveCardToActiveSection(card, task) {
             }
         }
 
-        // Создаём карточку и вставляем сразу после заголовка "Активные"
         const newCard = makeTaskCard(task);
         newCard.style.opacity = '0';
         newCard.style.transform = 'translateY(-8px)';
@@ -441,12 +418,10 @@ function moveCardToActiveSection(card, task) {
             newCard.style.transform = 'translateY(0)';
         });
 
-        // Запускаем таймер если нужно
         if (task.is_timer_running && task.timer_started_at) {
             setTimeout(() => startVisualTimer(task), 50);
         }
 
-        // Если выполненных задач не осталось — убираем заголовок "Выполнено"
         const doneHeader = list.querySelector('[data-section="done-header"]');
         if (doneHeader) {
             const doneCards = list.querySelectorAll('.task-card.task-done');
@@ -459,18 +434,16 @@ function moveCardToDoneSection(card, task) {
     const list = document.getElementById('tasks-list');
 
     setTimeout(() => {
-        // Убираем старую карточку
+
         const old = list.querySelector(`.task-card[data-id="${task.id}"]`);
         if (old) old.remove();
 
-        // Ищем или создаём заголовок "Выполнено"
         let doneHeader = list.querySelector('[data-section="done-header"]');
         if (!doneHeader) {
             doneHeader = makeSectionHeader('✅ Выполнено', 'done-header');
             list.appendChild(doneHeader);
         }
 
-        // Создаём новую карточку и вставляем после заголовка "Выполнено"
         const newCard = makeTaskCard(task);
         newCard.style.opacity = '0';
         newCard.style.transform = 'translateY(8px)';
@@ -482,7 +455,6 @@ function moveCardToDoneSection(card, task) {
             newCard.style.transform = 'translateY(0)';
         });
 
-        // Если активных задач не осталось — убираем их заголовок
         const activeHeader = list.querySelector('[data-section="active-header"]');
         if (activeHeader) {
             const activeCards = list.querySelectorAll('.task-card:not(.task-done)');
@@ -491,15 +463,12 @@ function moveCardToDoneSection(card, task) {
     }, 200);
 }
 
-// ===== ВИЗУАЛЬНЫЙ ТАЙМЕР =====
 function startVisualTimer(task, _retry = 0) {
     if (activeTimers[task.id]) clearInterval(activeTimers[task.id]);
 
     const timerEl = document.getElementById(`timer-${task.id}`);
     if (!timerEl) {
-        // Карточка ещё не вставлена в DOM (make*Card вызывает таймер до appendChild).
-        // Пробуем на следующем кадре — но не бесконечно, чтобы не зациклиться,
-        // если карточка действительно удалена.
+
         if (_retry < 5) {
             requestAnimationFrame(() => startVisualTimer(task, _retry + 1));
         }
@@ -507,7 +476,6 @@ function startVisualTimer(task, _retry = 0) {
     }
     timerEl.style.display = 'inline-block';
 
-    // Защита: без времени старта обратный отсчёт построить нельзя
     if (!task.timer_started_at) { timerEl.style.display = 'none'; return; }
 
     const tsStr = task.timer_started_at.endsWith('Z') || task.timer_started_at.includes('+')
@@ -525,7 +493,6 @@ function startVisualTimer(task, _retry = 0) {
             timerEl.style.background = 'rgba(16,185,129,0.1)';
             clearInterval(activeTimers[task.id]);
 
-            // Пульсируем кнопку "Готово"
             const btn = document.querySelector(`.task-card[data-id="${task.id}"] .btn-complete`);
             if (btn) btn.style.animation = 'pulse-btn 1s ease-in-out infinite';
         } else {
@@ -541,7 +508,6 @@ function startVisualTimer(task, _retry = 0) {
     activeTimers[task.id] = setInterval(tick, 1000);
 }
 
-// ===== ДЕЙСТВИЯ =====
 async function startTimer(taskId) {
     const btn = document.querySelector(`.task-card[data-id="${taskId}"] .btn-start`);
     if (btn) { btn.disabled = true; btn.textContent = '...'; }
@@ -549,7 +515,6 @@ async function startTimer(taskId) {
     try {
         await api.request('POST', `/tasks/${taskId}/start-timer`, null, true);
 
-        // Обновляем локально без перезагрузки
         const idx = tasks.findIndex(t => t.id === taskId);
         if (idx !== -1) {
             tasks[idx].is_timer_running = true;
@@ -572,14 +537,12 @@ async function completeTask(taskId) {
         const result = await api.request('POST', `/tasks/${taskId}/complete`, null, true);
         const xp = result.xp_result;
 
-        // Обновляем локально
         const idx = tasks.findIndex(t => t.id === taskId);
         if (idx !== -1) {
             tasks[idx] = { ...tasks[idx], ...result, status: 'done', is_timer_running: false };
             updateTaskCard(tasks[idx]);
         }
 
-        // Анимация XP
         showXpAnimation(xp.xp_gained);
 
         let msg = `+${xp.xp_gained} XP! 🎉`;
@@ -588,7 +551,6 @@ async function completeTask(taskId) {
         if (xp.capped)     msg += ' (дневной лимит)';
         showToast(msg);
 
-        // Обновляем персонажа
         await loadCharacter();
     } catch (e) {
         showToast(e.message, true);
@@ -603,7 +565,6 @@ async function undoneTask(taskId) {
     try {
         const result = await api.request('POST', `/tasks/${taskId}/undone`, null, true);
 
-        // Убираем из done, обновляем локально
         const idx = tasks.findIndex(t => t.id === taskId);
         if (idx !== -1) {
             tasks[idx] = { ...tasks[idx], status: 'active', completed_at: null,
@@ -641,7 +602,6 @@ async function deleteTask(taskId) {
     });
 }
 
-// ===== АНИМАЦИЯ +XP =====
 function showXpAnimation(amount) {
     if (!amount) return;
     const el = document.createElement('div');
@@ -649,7 +609,6 @@ function showXpAnimation(amount) {
     el.textContent = `+${amount} XP`;
     document.body.appendChild(el);
 
-    // Позиция у XP бара
     const xpBar = document.getElementById('xp-fill');
     if (xpBar) {
         const rect = xpBar.getBoundingClientRect();
@@ -672,7 +631,6 @@ function showXpAnimation(amount) {
     }, 900);
 }
 
-// ===== МОДАЛЬНОЕ ОКНО =====
 document.getElementById('open-task-modal').addEventListener('click', () => {
     document.getElementById('task-modal').style.display = 'flex';
     document.getElementById('task-title').focus();
@@ -709,12 +667,10 @@ document.getElementById('task-form').addEventListener('submit', async (e) => {
     try {
         const newTask = await api.request('POST', '/tasks/', { title, description, difficulty }, true);
 
-        // Закрываем модалку
         document.getElementById('task-modal').style.display = 'none';
         document.getElementById('task-form').reset();
         document.querySelectorAll('.diff-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
 
-        // Мгновенно добавляем в список
         addTaskToList(newTask);
 
         showToast('Задача создана! ⚔️');
@@ -729,7 +685,6 @@ document.getElementById('task-form').addEventListener('submit', async (e) => {
     }
 });
 
-// ===== ТОСТ =====
 function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;

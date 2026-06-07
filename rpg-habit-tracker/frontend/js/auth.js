@@ -1,4 +1,4 @@
-// Обработка OAuth редиректа
+
 (function handleOAuthRedirect() {
     const params = new URLSearchParams(window.location.search);
     const oauthToken = params.get('oauth_token');
@@ -6,7 +6,7 @@
     const error = params.get('error');
 
     if (error) {
-        // Убираем параметры из URL
+
         window.history.replaceState({}, '', '/');
         setTimeout(() => {
             showScreen('auth-screen');
@@ -16,7 +16,7 @@
     }
 
     if (oauthToken) {
-        // Убираем параметры из URL
+
         window.history.replaceState({}, '', '/');
         api.setToken(oauthToken);
 
@@ -30,19 +30,16 @@
     }
 })();
 
-
-// Кнопка Google — скрываем только если сервер явно сказал disabled.
-// По умолчанию кнопка видима (display:flex задан в CSS .btn-google).
 async function initGoogleBtn() {
     try {
         const status = await fetch('/auth/google/status').then(r => r.json());
         const btn = document.getElementById('google-login-btn');
         const divider = document.getElementById('oauth-divider');
-        const enabled = status.enabled !== false; // true если enabled или запрос упал
+        const enabled = status.enabled !== false;
         if (btn) btn.style.display = enabled ? 'flex' : 'none';
         if (divider) divider.style.display = enabled ? 'flex' : 'none';
     } catch {
-        // Сеть упала — оставляем кнопку видимой, пусть пользователь попробует
+
         const btn = document.getElementById('google-login-btn');
         const divider = document.getElementById('oauth-divider');
         if (btn) btn.style.display = 'flex';
@@ -74,7 +71,6 @@ function showSuccess(id, msg) {
     setTimeout(() => el.style.display = 'none', 3000);
 }
 
-// Переключение вкладок логин/регистрация
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -84,7 +80,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// Регистрация
 document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('reg-email').value;
@@ -110,7 +105,6 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     }
 });
 
-// OTP подтверждение
 document.getElementById('otp-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const otp = document.getElementById('otp-input').value;
@@ -135,7 +129,6 @@ document.getElementById('otp-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Логин
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
@@ -161,7 +154,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Онбординг — выбор пола
 document.querySelectorAll('.gender-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
@@ -169,7 +161,6 @@ document.querySelectorAll('.gender-btn').forEach(btn => {
     });
 });
 
-// Онбординг — живая проверка username с дебаунсом
 (function setupOnboardingUsernameCheck() {
     const input = document.getElementById('onboarding-username');
     const hint  = document.getElementById('onboarding-username-hint');
@@ -180,7 +171,6 @@ document.querySelectorAll('.gender-btn').forEach(btn => {
     let lastAvailable = false;
 
     function setHint(msg, kind) {
-        // kind: 'ok' | 'err' | 'muted'
         hint.textContent = msg;
         hint.style.display = msg ? 'block' : 'none';
         hint.classList.remove('username-hint-ok', 'username-hint-err', 'username-hint-muted');
@@ -189,12 +179,11 @@ document.querySelectorAll('.gender-btn').forEach(btn => {
         if (kind === 'muted') hint.classList.add('username-hint-muted');
     }
 
-    // Доступность кешируем, чтобы submit мог моментально решить
     input._isAvailable = () => lastAvailable && lastChecked === input.value.trim().toLowerCase();
 
     input.addEventListener('input', () => {
         const val = input.value.trim().toLowerCase();
-        input.value = val; // нормализация — нижний регистр
+        input.value = val;
         clearTimeout(timer);
         if (!val) { setHint('', 'muted'); return; }
         if (val.length < 3) { setHint('Минимум 3 символа', 'err'); return; }
@@ -227,7 +216,6 @@ document.querySelectorAll('.gender-btn').forEach(btn => {
     });
 })();
 
-// Онбординг — отправка
 document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const display_name = document.getElementById('display-name').value;

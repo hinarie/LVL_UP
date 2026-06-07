@@ -3,7 +3,6 @@ from pathlib import Path
 
 ENV_PATH = Path(__file__).resolve().parent.parent.parent.parent / ".env"
 
-
 class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str
@@ -19,13 +18,10 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
-    # При хостинге: укажи https://yourdomain.com
-    # При локальной разработке: оставь пустым — redirect_uri берётся из запроса
     APP_URL: str = ""
 
     class Config:
         env_file = str(ENV_PATH)
         env_file_encoding = "utf-8"
-
 
 settings = Settings()

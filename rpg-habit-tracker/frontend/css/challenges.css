@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
-   challenges.css — Ивенты (редизайн)
-═══════════════════════════════════════════════════════════════ */
+
 
 #page-challenges {
     flex-direction: column;
@@ -23,7 +21,6 @@
     gap: 16px;
 }
 
-/* ── Шапка ─────────────────────────────────────────────────── */
 .ch-page-header {
     display: flex;
     align-items: center;
@@ -41,7 +38,6 @@
 .ch-page-emoji { font-size: 22px; }
 .ch-page-title h2 { font-size: 20px; font-weight: 700; margin: 0; }
 
-/* ── Фильтры ───────────────────────────────────────────────── */
 .ch-filter-tabs {
     display: flex;
     gap: 2px;
@@ -86,7 +82,6 @@
 
 .btn-create-event:hover { opacity: 0.9; }
 
-/* ── Двухколоночный лейаут ─────────────────────────────────── */
 .ch-two-col {
     display: grid;
     grid-template-columns: 360px 1fr;
@@ -94,7 +89,6 @@
     align-items: start;
 }
 
-/* ── Список (левая колонка) ────────────────────────────────── */
 .ch-list-col {
     display: flex;
     flex-direction: column;
@@ -133,7 +127,6 @@
 .ch-empty-icon { font-size: 24px; }
 .ch-empty p { font-size: 13px; margin: 0; }
 
-/* ── Карточка каталога ─────────────────────────────────────── */
 .challenge-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -298,7 +291,6 @@
     white-space: nowrap;
 }
 
-/* ── Архив ─────────────────────────────────────────────────── */
 .ch-archive-toggle {
     display: flex;
     align-items: center;
@@ -322,10 +314,6 @@
     font-size: 11px;
     color: var(--text-muted);
 }
-
-/* ══════════════════════════════════════════════════════════════
-   ЖИВАЯ ПАНЕЛЬ (правая колонка)
-══════════════════════════════════════════════════════════════ */
 
 .ch-live-panel {
     background: var(--bg-card);
@@ -361,7 +349,6 @@
     overflow: hidden;
 }
 
-/* Шапка живой панели */
 .ch-live-header {
     padding: 16px 16px 0;
     border-bottom: 1px solid var(--border);
@@ -468,7 +455,6 @@
     border-radius: var(--radius-sm);
 }
 
-/* Табы живой панели */
 .ch-live-tabs {
     display: flex;
     border-bottom: 1px solid var(--border);
@@ -494,7 +480,6 @@
 .ch-live-tab:hover { color: var(--text-primary); }
 .ch-live-tab.active { color: var(--accent-purple-bright); border-bottom-color: var(--accent-purple); }
 
-/* Панели контента */
 .ch-live-panels {
     flex: 1;
     overflow-y: auto;
@@ -509,10 +494,6 @@
 }
 
 .ch-live-panel-content.active { display: flex; }
-
-/* ══════════════════════════════════════════════════════════════
-   ЗАДАЧИ В ЖИВОЙ ПАНЕЛИ
-══════════════════════════════════════════════════════════════ */
 
 .lp-tasks-list { display: flex; flex-direction: column; gap: 8px; }
 
@@ -628,7 +609,6 @@
     justify-content: space-between;
 }
 
-/* Hold-to-complete */
 .btn-hold {
     position: relative;
     overflow: hidden;
@@ -656,10 +636,6 @@
     transform: scale(0);
     pointer-events: none;
 }
-
-/* ══════════════════════════════════════════════════════════════
-   ЛИДЕРБОРД
-══════════════════════════════════════════════════════════════ */
 
 .lp-prizes {
     background: var(--bg-secondary);
@@ -740,10 +716,6 @@
 }
 
 .btn-finish-event:hover { background: rgba(239,68,68,0.15); }
-
-/* ══════════════════════════════════════════════════════════════
-   ЛЕНТА
-══════════════════════════════════════════════════════════════ */
 
 .lp-post-form {
     background: var(--bg-secondary);
@@ -850,7 +822,6 @@
     word-break: break-word;
 }
 
-/* Реакции — только одна активная */
 .lp-reactions {
     display: flex;
     gap: 5px;
@@ -881,7 +852,6 @@
     color: var(--accent-purple-bright);
 }
 
-/* Комментарии */
 .lp-comments {
     border-top: 1px solid var(--border);
     padding-top: 8px;
@@ -961,10 +931,6 @@
 }
 
 .btn-comment-send:hover { border-color: var(--accent-purple); color: var(--accent-purple-bright); }
-
-/* ══════════════════════════════════════════════════════════════
-   ФОРМА СОЗДАНИЯ (модалка)
-══════════════════════════════════════════════════════════════ */
 
 .ch-create-modal {
     max-width: 540px;
@@ -1168,7 +1134,6 @@
 .ch-submit-btn:hover { opacity: 0.9; }
 .ch-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* XP float */
 .xp-float {
     position: fixed;
     bottom: 80px;
@@ -1190,10 +1155,6 @@
     100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   MOBILE
-══════════════════════════════════════════════════════════════ */
-
 @media (max-width: 900px) {
     .ch-two-col {
         grid-template-columns: 1fr;
@@ -1211,7 +1172,6 @@
     .ch-page-header { flex-direction: column; align-items: flex-start; }
 }
 
-/* ── Фикс выравнивания: живая панель на одном уровне с карточками ── */
 .ch-two-col {
     align-items: stretch;
 }
@@ -1220,7 +1180,6 @@
     min-height: 400px;
 }
 
-/* ── Кнопка "Выбрано" ────────────────────────────────────────── */
 .btn-card-open.active-card-btn {
     background: rgba(124,58,237,0.1);
     border-color: var(--accent-purple);
@@ -1228,9 +1187,6 @@
     cursor: default;
 }
 
-/* ── Пустой стейт живой панели убран — панель сразу показывает контент */
-
-/* ── Реакции + комментарии в одной строке ───────────────────── */
 .lp-post-footer-row {
     display: flex;
     align-items: center;
@@ -1264,7 +1220,6 @@
     background: rgba(124,58,237,0.08);
 }
 
-/* ── Комментарии скрыты по умолчанию ────────────────────────── */
 .lp-comments {
     margin-top: 8px;
     border-top: 1px solid var(--border);
@@ -1278,7 +1233,6 @@
     margin-bottom: 8px;
 }
 
-/* ── Мобилка ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .ch-two-col {
         grid-template-columns: 1fr;
@@ -1388,10 +1342,9 @@
     color: var(--accent-cyan);
     font-weight: 600;
 }
-/* ── Скрываем фильтр-табы ────────────────────────────────────── */
+
 .ch-filter-tabs { display: none !important; }
 
-/* ── custom_days пикер ───────────────────────────────────────── */
 .ch-task-custom-days {
     display: flex;
     flex-direction: column;
@@ -1427,7 +1380,6 @@
     color: var(--accent-purple-bright);
 }
 
-/* ── Мобилка: паддинг формы ─────────────────────────────────── */
 @media (max-width: 900px) {
     .ch-create-modal {
         padding: 0;
@@ -1443,7 +1395,7 @@
     }
 
     .ch-create-form {
-        padding: 16px 20px 80px; /* снизу место для sticky кнопки */
+        padding: 16px 20px 80px;
     }
 
     .ch-form-grid-2 { grid-template-columns: 1fr; }
@@ -1451,7 +1403,6 @@
     .ch-task-row-opts { grid-template-columns: 1fr 1fr; }
 }
 
-/* ── tasks.css дополнения: карточка задачи из ивента ─────────── */
 .task-challenge-card {
     border-left: 3px solid var(--accent-purple) !important;
 }
@@ -1469,41 +1420,36 @@
     margin-bottom: 4px;
 }
 
-/* ── Убираем кнопку "Открыть" полностью ────────────────────── */
 .btn-card-open { display: none !important; }
 .ch-card-tap-hint { display: none !important; }
 
-/* ── Активная карточка: мгновенная подсветка ────────────────── */
 .challenge-card.active {
     border-color: var(--accent-purple) !important;
     background: rgba(124,58,237,0.05);
 }
 
-/* ── Мобилка: мастер-деталь (список ⇄ детали как два экрана) ──── */
 @media (max-width: 900px) {
-    /* На мобиле колонки превращаются в один поток. По умолчанию (или явно
-       data-mobile-view="list") показываем список и прячем живую панель.
-       После тапа по карточке JS ставит data-mobile-view="detail". */
+
     #page-challenges[data-mobile-view="list"] .ch-live-panel { display: none; }
     #page-challenges[data-mobile-view="detail"] .ch-catalog .ch-list-col { display: none; }
     #page-challenges[data-mobile-view="detail"] .ch-page-header { display: none; }
 
-    /* Детали разворачиваются на всю ширину */
+
     #page-challenges[data-mobile-view="detail"] .ch-two-col {
         grid-template-columns: 1fr;
     }
     .ch-list-col { display: flex; flex-direction: column; }
 
-    /* Порядок секций списка: Участвую → Открытые → Завершённые (в самом конце) */
+
     #ch-section-joined  { order: 0; }
     #ch-section-public  { order: 1; }
     #ch-archive-section { order: 2; }
 
-    /* Плавный вход экрана деталей: лёгкое скольжение справа + проявление */
+
     #page-challenges[data-mobile-view="detail"] .ch-live-panel {
         animation: ch-detail-in 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
-    /* Кнопка «Назад» проявляется чуть позже — приятный каскад */
+
     #page-challenges[data-mobile-view="detail"] .ch-live-back {
         animation: ch-fade-in 0.35s ease 0.05s both;
     }
@@ -1517,7 +1463,7 @@
     from { opacity: 0; }
     to   { opacity: 1; }
 }
-/* Уважаем системную настройку «меньше движения» */
+
 @media (prefers-reduced-motion: reduce) {
     #page-challenges[data-mobile-view="detail"] .ch-live-panel,
     #page-challenges[data-mobile-view="detail"] .ch-live-back {
@@ -1525,7 +1471,6 @@
     }
 }
 
-/* ── Кнопка «Назад» в деталях (видна только на мобиле) ───────── */
 .ch-live-back { display: none; }
 
 @media (max-width: 900px) {
@@ -1552,13 +1497,8 @@
     .ch-live-back-arrow { font-size: 18px; line-height: 1; }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   МОБИЛКА — финальная полировка ивентов (консолидировано)
-   Один блок, чтобы не плодить разрозненные правила.
-══════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-    /* В деталях панель занимает всю ширину и растёт по контенту
-       (на десктопе она sticky с ограниченной высотой — здесь сбрасываем). */
+
     #page-challenges[data-mobile-view="detail"] .ch-live-panel {
         position: static;
         max-height: none;
@@ -1566,12 +1506,12 @@
     }
     .ch-live-panels { overflow: visible; }
 
-    /* Активная карточка в списке — заметная подсветка */
+
     .challenge-card.active {
         box-shadow: 0 0 0 1px var(--accent-purple), 0 6px 18px rgba(124,58,237,0.18);
     }
 
-    /* Тач-цели: основные кнопки действий не ниже ~44px */
+
     .btn-card-join,
     .btn-live-join,
     .btn-task-start,
@@ -1581,31 +1521,28 @@
         min-height: 44px;
     }
 
-    /* Поле комментария и кнопка отправки — удобнее тапать */
+
     .lp-comment-input { min-height: 40px; }
     .btn-comment-send { min-width: 40px; min-height: 40px; }
 
-    /* Реакции крупнее под палец */
+
     .lp-reaction { padding: 6px 10px; font-size: 15px; }
 }
 
 @media (max-width: 500px) {
-    /* Заголовок страницы: эмодзи + название компактнее */
+
     .ch-page-title h2 { font-size: 18px; }
 
-    /* Карточка ивента: чуть плотнее, но читаемо */
+
     .challenge-card { padding: 12px; }
 
-    /* Шапка живой панели не прижимается к краям */
+
     .ch-live-title { font-size: 16px; }
 
-    /* Билдер задач в модалке — опции в одну колонку на самых узких */
+
     .ch-task-row-opts { grid-template-columns: 1fr 1fr; }
 }
 
-/* ── Модалка создания ивента использует .modal-panel (а не .modal),
-      поэтому мобильный bottom-sheet из components.css её не покрывал.
-      Дублируем нужные правила для .modal-panel здесь. ───────────── */
 @media (max-width: 768px) {
     .modal-panel {
         width: 100%;
@@ -1614,11 +1551,9 @@
         max-height: 90dvh;
         overflow-y: auto;
     }
-    /* .modal-overlay уже получает align-items:flex-end из components.css,
-       так что панель прижимается к низу экрана как нативный шит. */
+
 }
 
-/* ── Удаление своих постов и комментариев в ленте ивента ─────── */
 .lp-post-del {
     background: none;
     border: none;
@@ -1643,7 +1578,7 @@
     font-size: 11px;
     cursor: pointer;
     padding: 0 4px;
-    margin-left: auto;        /* прижать к правому краю строки автор+время */
+    margin-left: auto;
     border-radius: var(--radius-sm);
     transition: var(--transition);
     line-height: 1;
@@ -1653,7 +1588,6 @@
     background: rgba(239,68,68,0.1);
 }
 
-/* Реакции в завершённом ивенте — только просмотр, без интерактива */
 .lp-reaction-readonly {
     cursor: default;
     opacity: 0.85;
@@ -1662,7 +1596,6 @@
     border-color: var(--border);
 }
 
-/* На мобиле кнопки удаления крупнее под палец */
 @media (max-width: 900px) {
     .lp-post-del { font-size: 16px; padding: 6px 8px; }
     .lp-comment-del { font-size: 13px; padding: 2px 6px; }

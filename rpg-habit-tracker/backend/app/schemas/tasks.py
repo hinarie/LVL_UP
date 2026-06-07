@@ -3,12 +3,10 @@ from typing import Optional
 from enum import Enum
 from datetime import datetime
 
-
 class TaskDifficulty(str, Enum):
     easy = "easy"
     medium = "medium"
     hard = "hard"
-
 
 class TaskCreate(BaseModel):
     title: str
@@ -20,7 +18,6 @@ class TaskCreate(BaseModel):
         if not v.strip():
             raise ValueError('Название не может быть пустым')
         return v.strip()
-
 
 class TaskResponse(BaseModel):
     id: str

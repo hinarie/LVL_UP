@@ -57,7 +57,6 @@ body::before {
     z-index: 0;
 }
 
-/* Скроллбар */
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
@@ -67,7 +66,6 @@ body::before {
 *::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 *::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
 
-/* Общие поля */
 .field { margin-bottom: 18px; }
 
 .field label {
@@ -100,7 +98,6 @@ body::before {
 
 .field-row { display: flex; gap: 12px; }
 
-/* Общие кнопки */
 .btn-primary {
     width: 100%;
     padding: 13px;
@@ -164,7 +161,6 @@ body::before {
 
 .btn-delete:hover { color: var(--accent-red); background: rgba(239,68,68,0.1); }
 
-/* Бейджи */
 .badge {
     font-size: 11px;
     font-weight: 500;
@@ -186,7 +182,6 @@ body::before {
     border-color: rgba(236,72,153,0.3) !important;
 }
 
-/* Сообщение об ошибке */
 .error-msg {
     display: none;
     font-size: 13px;
@@ -198,7 +193,6 @@ body::before {
     border-radius: var(--radius-sm);
 }
 
-/* Заглушка пустого списка */
 .tasks-empty {
     display: flex;
     flex-direction: column;
@@ -211,6 +205,5 @@ body::before {
 
 .empty-icon { font-size: 48px; opacity: 0.4; }
 
-/* Экраны */
 .screen { display: none; min-height: 100dvh; }
 .screen.active { display: flex; }

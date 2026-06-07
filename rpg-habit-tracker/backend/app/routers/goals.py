@@ -23,29 +23,18 @@ router = APIRouter(prefix="/goals", tags=["goals"])
 MAX_ACTIVE_GOALS = 10
 MAX_SUBTASKS_PER_HOUR = 5
 
-
 def naive_utc(dt: datetime) -> datetime:
-    """Конвертирует datetime в naive UTC."""
     if dt is None:
         return None
     if dt.tzinfo is not None:
         return dt.astimezone(timezone.utc).replace(tzinfo=None)
     return dt
 
-
 def calc_subtask_xp(goal: Goal, total_subtasks: int) -> int:
-    """
-    50% бонуса делится ПОРОВНУ на количество подзадач.
-    1 подзадача = 30 XP
-    2 подзадачи = 15 XP каждая
-    3 подзадачи = 10 XP каждая
-    и т.д.
-    """
     if total_subtasks == 0:
         return 0
     half_bonus = RARITY_COMPLETION_BONUS[goal.rarity] // 2
     return max(1, half_bonus // total_subtasks)
-
 
 def goal_status_color(goal: Goal) -> str:
     if goal.status != GoalStatus.active:
@@ -53,50 +42,44 @@ def goal_status_color(goal: Goal) -> str:
     if not goal.deadline:
         return "green"
 
-    now       = datetime.utcnow()
-    created   = goal.created_at
-    deadline  = goal.deadline
+    now = datetime.utcnow()
+    created = goal.created_at
+    deadline = goal.deadline
     total_days = (deadline - created).days
-    days_left  = (deadline - now).days
-    pct        = goal.progress_percent
+    days_left = (deadline - now).days
+    pct = goal.progress_percent
 
     if total_days <= 0:
         return "red"
 
-    # Прошло больше половины срока
     half_time_passed = (now - created).days > (total_days / 2)
-    # Выполнено меньше половины подзадач
     half_done = pct >= 50
 
     if days_left < 1:
-        return "red"  # дедлайн завтра или уже прошёл
+        return "red"
     if half_time_passed and not half_done:
-        return "red"  # прошло >50% времени, сделано <50% задач
+        return "red"
     if days_left <= 3:
-        return "yellow"  # осталось мало дней
+        return "yellow"
     if half_time_passed and half_done:
-        return "yellow"  # прошло >50% времени, но прогресс есть
+        return "yellow"
     return "green"
-
 
 def subtask_to_dict(s: SubTask) -> dict:
     return {
-        "id":            str(s.id),
-        "goal_id":       str(s.goal_id),
-        "title":         s.title,
-        "xp_reward":     s.xp_reward,
-        "is_completed":  s.is_completed,
-        "completed_at":  s.completed_at,
-        "order_index":   s.order_index,
+        "id": str(s.id),
+        "goal_id": str(s.goal_id),
+        "title": s.title,
+        "xp_reward": s.xp_reward,
+        "is_completed": s.is_completed,
+        "completed_at": s.completed_at,
+        "order_index": s.order_index,
     }
 
-
 def goal_to_dict(goal: Goal) -> dict:
-    rarity        = goal.rarity
-    total         = len(goal.subtasks)
-    done          = sum(1 for s in goal.subtasks if s.is_completed)
-    # XP берём из первой невыполненной подзадачи (они все одинаковые)
-    # Если подзадач нет — показываем потенциальный
+    rarity = goal.rarity
+    total = len(goal.subtasks)
+    done = sum(1 for s in goal.subtasks if s.is_completed)
     current_subtask_xp = next(
         (s.xp_reward for s in goal.subtasks if not s.is_completed),
         calc_subtask_xp(goal, total) if total > 0
@@ -104,42 +87,38 @@ def goal_to_dict(goal: Goal) -> dict:
     )
 
     return {
-        "id":                    str(goal.id),
-        "title":                 goal.title,
-        "description":           goal.description,
-        "category":              goal.category,
-        "emoji":                 goal.emoji,
-        "rarity":                rarity.value,
-        "status":                goal.status.value,
-        "is_main_quest":         goal.is_main_quest,
-        "deadline":              goal.deadline,
-        "deadline_extensions":   goal.deadline_extensions,
+        "id": str(goal.id),
+        "title": goal.title,
+        "description": goal.description,
+        "category": goal.category,
+        "emoji": goal.emoji,
+        "rarity": rarity.value,
+        "status": goal.status.value,
+        "is_main_quest": goal.is_main_quest,
+        "deadline": goal.deadline,
+        "deadline_extensions": goal.deadline_extensions,
         "max_deadline_extensions": goal.max_deadline_extensions,
-        "extensions_left":       goal.max_deadline_extensions - goal.deadline_extensions,
-        "progress_percent":      goal.progress_percent,
-        "status_color":          goal_status_color(goal),
-        "completion_xp_bonus":   goal.completion_xp_bonus,
-        "subtask_xp": calc_subtask_xp(goal, total) if total > 0 
+        "extensions_left": goal.max_deadline_extensions - goal.deadline_extensions,
+        "progress_percent": goal.progress_percent,
+        "status_color": goal_status_color(goal),
+        "completion_xp_bonus": goal.completion_xp_bonus,
+        "subtask_xp": calc_subtask_xp(goal, total) if total > 0
                     else RARITY_COMPLETION_BONUS[rarity] // 2,
-        "subtask_xp_max":        RARITY_SUBTASK_MAX_XP[rarity],
+        "subtask_xp_max": RARITY_SUBTASK_MAX_XP[rarity],
         "completion_xp_granted": goal.completion_xp_granted,
-        "max_subtasks":          goal.max_subtasks,
-        "min_deadline_days":     RARITY_MIN_DEADLINE_DAYS[rarity],
-        "subtasks_count":        total,
-        "subtasks_done":         done,
-        "created_at":            goal.created_at,
-        "completed_at":          goal.completed_at,
-        "subtasks":              [subtask_to_dict(s) for s in goal.subtasks],
+        "max_subtasks": goal.max_subtasks,
+        "min_deadline_days": RARITY_MIN_DEADLINE_DAYS[rarity],
+        "subtasks_count": total,
+        "subtasks_done": done,
+        "created_at": goal.created_at,
+        "completed_at": goal.completed_at,
+        "subtasks": [subtask_to_dict(s) for s in goal.subtasks],
     }
 
-
 async def _update_goal_progress(db: AsyncSession, goal: Goal):
-    """Обновляет прогресс. НЕ завершает цель автоматически."""
     total = len(goal.subtasks)
-    done  = sum(1 for s in goal.subtasks if s.is_completed)
+    done = sum(1 for s in goal.subtasks if s.is_completed)
     goal.progress_percent = int((done / total) * 100) if total > 0 else 0
-    # Автозавершения НЕТ — только вручную через /complete
-
 
 @router.get("/")
 async def get_goals(
@@ -156,14 +135,12 @@ async def get_goals(
         await db.refresh(g, ['subtasks'])
     return [goal_to_dict(g) for g in goals]
 
-
 @router.post("/", status_code=201)
 async def create_goal(
     data: GoalCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Лимит активных целей
     cnt = await db.execute(
         select(func.count(Goal.id)).where(
             Goal.user_id == current_user.id,
@@ -173,7 +150,6 @@ async def create_goal(
     if cnt.scalar() >= MAX_ACTIVE_GOALS:
         raise HTTPException(400, f"Максимум {MAX_ACTIVE_GOALS} активных целей")
 
-    # Только один главный квест
     if data.is_main_quest:
         mq = await db.execute(
             select(Goal).where(
@@ -185,10 +161,9 @@ async def create_goal(
         if mq.scalar_one_or_none():
             raise HTTPException(400, "Главный квест уже существует")
 
-    rarity   = GoalRarity(data.rarity.value)
+    rarity = GoalRarity(data.rarity.value)
     min_days = RARITY_MIN_DEADLINE_DAYS[rarity]
 
-    # Проверка минимального дедлайна
     deadline = naive_utc(data.deadline)
     if deadline is not None:
         min_deadline = datetime.utcnow() + timedelta(days=min_days)
@@ -219,7 +194,6 @@ async def create_goal(
     await db.refresh(goal, ['subtasks'])
     return goal_to_dict(goal)
 
-
 @router.post("/{goal_id}/subtasks", status_code=201)
 async def add_subtask(
     goal_id: str,
@@ -241,7 +215,6 @@ async def add_subtask(
     if len(goal.subtasks) >= goal.max_subtasks:
         raise HTTPException(400, f"Максимум {goal.max_subtasks} подзадач")
 
-    # Античит: лимит создания в час
     one_hour_ago = datetime.utcnow() - timedelta(hours=1)
     recent = await db.execute(
         select(func.count(SubTask.id)).where(
@@ -252,11 +225,9 @@ async def add_subtask(
     if recent.scalar() >= MAX_SUBTASKS_PER_HOUR:
         raise HTTPException(429, f"Максимум {MAX_SUBTASKS_PER_HOUR} подзадач в час")
 
-    # Новое количество подзадач после добавления
     new_total = len(goal.subtasks) + 1
-    new_xp    = calc_subtask_xp(goal, new_total)
+    new_xp = calc_subtask_xp(goal, new_total)
 
-    # Пересчитываем XP для всех существующих невыполненных подзадач
     for s in goal.subtasks:
         if not s.is_completed:
             s.xp_reward = new_xp
@@ -276,7 +247,6 @@ async def add_subtask(
     await db.commit()
     return subtask_to_dict(subtask)
 
-
 @router.post("/{goal_id}/subtasks/{subtask_id}/complete")
 async def complete_subtask(
     goal_id: str,
@@ -293,7 +263,6 @@ async def complete_subtask(
     if subtask.is_completed:
         raise HTTPException(400, "Уже выполнена")
 
-    # Лимит подзадач в час (античит)
     one_hour_ago = datetime.utcnow() - timedelta(hours=1)
     recent = await db.execute(
         select(func.count(SubTask.id)).where(
@@ -329,7 +298,6 @@ async def complete_subtask(
     await db.refresh(goal, ['subtasks'])
     await _update_goal_progress(db, goal)
 
-    # Бонус за завершение цели (50% от total)
     bonus_result = None
     if goal.status == GoalStatus.completed and not goal.completion_xp_granted:
         goal.completion_xp_granted = True
@@ -343,12 +311,11 @@ async def complete_subtask(
 
     await db.commit()
     return {
-        "subtask":       subtask_to_dict(subtask),
-        "xp_result":     xp_result,
+        "subtask": subtask_to_dict(subtask),
+        "xp_result": xp_result,
         "goal_completed": goal.status == GoalStatus.completed,
-        "bonus_xp":      bonus_result,
+        "bonus_xp": bonus_result,
     }
-
 
 @router.post("/{goal_id}/subtasks/{subtask_id}/uncomplete")
 async def uncomplete_subtask(
@@ -397,7 +364,6 @@ async def uncomplete_subtask(
     await db.commit()
     return {"message": "Отменено", "subtask": subtask_to_dict(subtask)}
 
-
 @router.post("/{goal_id}/complete")
 async def complete_goal(
     goal_id: str,
@@ -415,7 +381,6 @@ async def complete_goal(
 
     await db.refresh(goal, ['subtasks'])
 
-    # Античит: нельзя завершить если не все подзадачи выполнены
     if len(goal.subtasks) == 0:
         raise HTTPException(400, "Нельзя завершить цель без подзадач")
 
@@ -426,24 +391,21 @@ async def complete_goal(
             f"Осталось выполнить {len(undone)} подзадач прежде чем завершить цель"
         )
 
-    # Античит: минимальное время жизни цели
-    min_days  = RARITY_MIN_DEADLINE_DAYS[goal.rarity]
-    min_age   = timedelta(days=min_days // 2)  # хотя бы половину минимального срока
-    age       = datetime.utcnow() - goal.created_at
+    min_days = RARITY_MIN_DEADLINE_DAYS[goal.rarity]
+    min_age = timedelta(days=min_days // 2)
+    age = datetime.utcnow() - goal.created_at
     if age < min_age:
         raise HTTPException(
             400,
             f"Цель должна существовать минимум {min_age.days} дней перед завершением"
         )
 
-    # Античит: нельзя завершить раньше дедлайна если он очень скоро
-    # (защита от создания цели с дедлайном завтра и сразу завершения)
     if goal.deadline:
         days_to_deadline = (goal.deadline - datetime.utcnow()).days
         if days_to_deadline > 0 and goal.progress_percent < 100:
-            pass  # всё ок, дедлайн ещё не наступил и прогресс 100%
+            pass
 
-    goal.status       = GoalStatus.completed
+    goal.status = GoalStatus.completed
     goal.completed_at = datetime.utcnow()
 
     char = await db.execute(select(Character).where(Character.user_id == current_user.id))
@@ -462,10 +424,9 @@ async def complete_goal(
 
     await db.commit()
     return {
-        "message":  "Цель завершена! 🎉",
+        "message": "Цель завершена! 🎉",
         "bonus_xp": bonus_result,
     }
-
 
 @router.delete("/{goal_id}/subtasks/{subtask_id}")
 async def delete_subtask(
@@ -499,7 +460,6 @@ async def delete_subtask(
     await db.commit()
     return {"message": "Удалено"}
 
-
 @router.post("/{goal_id}/extend-deadline")
 async def extend_deadline(
     goal_id: str,
@@ -520,9 +480,8 @@ async def extend_deadline(
     if new_dl <= datetime.utcnow():
         raise HTTPException(400, "Новый дедлайн должен быть в будущем")
 
-    # Минимальный перенос — хотя бы на min_deadline_days от сейчас
     min_days = RARITY_MIN_DEADLINE_DAYS[goal.rarity]
-    min_new  = datetime.utcnow() + timedelta(days=min_days)
+    min_new = datetime.utcnow() + timedelta(days=min_days)
     if new_dl < min_new:
         raise HTTPException(
             400,
@@ -534,7 +493,6 @@ async def extend_deadline(
     await db.commit()
     await db.refresh(goal, ['subtasks'])
     return goal_to_dict(goal)
-
 
 @router.delete("/{goal_id}")
 async def delete_goal(

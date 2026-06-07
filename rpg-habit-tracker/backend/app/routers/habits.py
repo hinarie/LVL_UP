@@ -15,7 +15,6 @@ from app.models.transactions import XPSource
 
 router = APIRouter(prefix="/habits", tags=["habits"])
 
-
 def habit_to_dict(habit: Habit, completed_today: bool, streak: int, calendar: list) -> dict:
     return {
         "id": str(habit.id),
@@ -35,10 +34,9 @@ def habit_to_dict(habit: Habit, completed_today: bool, streak: int, calendar: li
         "created_at": habit.created_at,
     }
 
-
 @router.get("/")
 async def get_habits(
-    tz_offset: int = 0,  # смещение в минутах, например +300 для UTC+5
+    tz_offset: int = 0,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -49,7 +47,6 @@ async def get_habits(
     )
     habits = result.scalars().all()
 
-    # Вычисляем "сегодня" в часовом поясе пользователя
     from datetime import timezone, timedelta
     user_tz = timezone(timedelta(minutes=tz_offset))
     today = datetime.now(user_tz).date()
@@ -66,19 +63,16 @@ async def get_habits(
 
         completed_today = today in comp_dates
 
-        # Стрик
         streak = 0
         check = today
         while check in comp_dates:
             streak += 1
             check = check - timedelta(days=1)
 
-        # Дата создания привычки в часовом поясе пользователя
         habit_created = habit.created_at.replace(
             tzinfo=timezone.utc
         ).astimezone(user_tz).date()
 
-        # Calendar — 90 дней с учётом часового пояса
         calendar = []
         for i in range(89, -1, -1):
             d = today - timedelta(days=i)
@@ -93,14 +87,12 @@ async def get_habits(
 
     return response
 
-
 @router.post("/", status_code=201)
 async def create_habit(
     data: HabitCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Конвертируем список дней в строку для хранения
     freq_days = None
     if data.frequency == "custom" and data.frequency_days:
         freq_days = ",".join(str(d) for d in data.frequency_days)
@@ -127,7 +119,6 @@ async def create_habit(
     await db.commit()
     await db.refresh(habit)
     return habit_to_dict(habit, False, 0, [])
-
 
 @router.post("/{habit_id}/complete")
 async def complete_habit(
@@ -182,7 +173,6 @@ async def complete_habit(
     await db.commit()
     return {"message": "Привычка выполнена!", "xp_result": xp_result}
 
-
 @router.post("/{habit_id}/uncomplete")
 async def uncomplete_habit(
     habit_id: str,
@@ -228,7 +218,6 @@ async def uncomplete_habit(
 
     await db.commit()
     return {"message": "Выполнение отменено"}
-
 
 @router.delete("/{habit_id}")
 async def delete_habit(

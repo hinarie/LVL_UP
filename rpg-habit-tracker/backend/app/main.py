@@ -36,7 +36,6 @@ app.include_router(notifications.router)
 FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "frontend"
 app.mount("/", StaticFiles(directory=str(FRONTEND_PATH), html=True), name="frontend")
 
-
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:

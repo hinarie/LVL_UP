@@ -74,7 +74,6 @@
 .page { display: none; height: 100%; }
 .page.active { display: flex; }
 
-/* Мобильная навигация */
 .mobile-nav {
     display: none;
     position: fixed;
@@ -110,7 +109,6 @@
 .mobile-nav-btn.active { color: var(--accent-purple-bright); }
 .mobile-nav-btn.active .nav-icon { filter: drop-shadow(0 0 6px var(--accent-purple)); }
 
-/* Адаптация */
 @media (max-width: 768px) {
     :root { --header-h: 50px; }
 

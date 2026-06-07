@@ -1,6 +1,3 @@
-// ═══════════════════════════════════════════════════════════════
-// challenges.js
-// ═══════════════════════════════════════════════════════════════
 
 let allChallenges    = [];
 let currentChallenge = null;
@@ -9,10 +6,6 @@ let activeLiveTab    = 'tasks';
 let taskTimers       = {};
 let holdTimers       = {};
 let tickInterval     = null;
-
-// ──────────────────────────────────────────────────────────────
-// Init
-// ──────────────────────────────────────────────────────────────
 
 function initChallenges() {
     document.querySelectorAll('.ch-live-tab').forEach(btn =>
@@ -29,27 +22,21 @@ function initChallenges() {
     document.getElementById('lp-post-btn')?.addEventListener('click', submitPost);
     initCreateForm();
 
-    // Автотик статусов каждые 60 сек
     tickInterval = setInterval(tickStatuses, 60000);
 
     loadChallenges();
 }
 
-// ──────────────────────────────────────────────────────────────
-// Загрузка
-// ──────────────────────────────────────────────────────────────
-
 async function loadChallenges() {
     try {
-        // При (пере)входе в раздел на мобиле всегда стартуем со списка
+
         document.getElementById('page-challenges')?.setAttribute('data-mobile-view', 'list');
         allChallenges = await api.request('GET', '/challenges/', null, true);
         renderCatalog();
         if (currentChallenge) {
             refreshLivePanel(currentChallenge.challenge.id);
         } else if (allChallenges.length > 0) {
-            // Автооткрываем первый НЕзавершённый ивент. Завершённые идут в архив
-            // в конце каталога — не стоит показывать их первыми в живой панели.
+
             const first = allChallenges.find(c => c.status !== 'finished')
                        ?? allChallenges[0];
             openLivePanel(first.id);
@@ -68,12 +55,8 @@ async function refreshLivePanel(challengeId) {
     } catch (e) { console.error(e); }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Каталог
-// ──────────────────────────────────────────────────────────────
-
 function renderCatalog() {
-    // По умолчанию на мобиле показываем список (если пользователь не открыл детали)
+
     const page = document.getElementById('page-challenges');
     if (page && !page.hasAttribute('data-mobile-view')) {
         page.setAttribute('data-mobile-view', 'list');
@@ -95,15 +78,13 @@ function renderCatalog() {
     if (pubSection) pubSection.style.display = open.length > 0 ? '' : 'none';
     renderList(pubList, open, 'Нет доступных ивентов');
 
-    // Архив
     const archiveSection = document.getElementById('ch-archive-section');
     const archiveList    = document.getElementById('ch-archive-list');
     const archiveCount   = document.getElementById('ch-archive-count');
     if (archived.length > 0) {
         archiveSection.style.display = '';
         if (archiveCount) archiveCount.textContent = archived.length;
-        // Перерисовываем всегда — иначе только что завершившийся ивент
-        // не попадёт в архив до перезагрузки страницы.
+
         if (archiveList) {
             archiveList.innerHTML = '';
             archived.forEach(c => archiveList.appendChild(makeCatalogCard(c)));
@@ -142,7 +123,6 @@ function makeCatalogCard(ch) {
     if (ch.joined) card.dataset.joined = '1';
     card.onclick = () => openLivePanel(ch.id, true);
 
-    // Прогресс (для активных)
     let progressHtml = '';
     if (ch.status === 'active') {
         const starts = new Date(ch.starts_at).getTime();
@@ -200,12 +180,8 @@ function makeCatalogCard(ch) {
     return card;
 }
 
-// ──────────────────────────────────────────────────────────────
-// Живая панель
-// ──────────────────────────────────────────────────────────────
-
 async function openLivePanel(challengeId, userInitiated = false) {
-    // Подсвечиваем карточку по data-challenge-id
+
     document.querySelectorAll('.challenge-card').forEach(c => c.classList.remove('active'));
     const targetCard = document.querySelector(`.challenge-card[data-challenge-id="${challengeId}"]`);
     if (targetCard) targetCard.classList.add('active');
@@ -216,16 +192,13 @@ async function openLivePanel(challengeId, userInitiated = false) {
         document.getElementById('ch-live-empty').style.display = 'none';
         document.getElementById('ch-live-content').style.display = 'flex';
         renderLivePanel(data);
-        // Сброс на первый таб
+
         document.querySelectorAll('.ch-live-tab').forEach(b => b.classList.remove('active'));
         document.querySelector('.ch-live-tab[data-tab="tasks"]')?.classList.add('active');
         document.querySelectorAll('.ch-live-panel-content').forEach(p => p.classList.remove('active'));
         document.getElementById('lp-tab-tasks')?.classList.add('active');
         activeLiveTab = 'tasks';
 
-        // На узких экранах используем мастер-деталь: список и детали — это два
-        // отдельных «экрана». Тап по карточке открывает детали на весь экран
-        // с кнопкой «Назад». На десктопе атрибут игнорируется (две колонки).
         if (userInitiated && window.matchMedia('(max-width: 900px)').matches) {
             showLiveDetailMobile();
         }
@@ -234,12 +207,11 @@ async function openLivePanel(challengeId, userInitiated = false) {
     }
 }
 
-// ── Мобильный мастер-деталь: переключение список ⇄ детали ──────
 function showLiveDetailMobile() {
     const page = document.getElementById('page-challenges');
     if (page) page.setAttribute('data-mobile-view', 'detail');
     ensureLiveBackBar();
-    // Прокрутка к верху деталей
+
     requestAnimationFrame(() => {
         document.getElementById('ch-live-panel')?.scrollIntoView({ block: 'start' });
         window.scrollTo({ top: 0, behavior: 'auto' });
@@ -249,11 +221,10 @@ function showLiveDetailMobile() {
 function showCatalogMobile() {
     const page = document.getElementById('page-challenges');
     if (page) page.setAttribute('data-mobile-view', 'list');
-    // Снимаем подсветку — мы снова в списке
+
     document.querySelectorAll('.challenge-card.active').forEach(c => c.classList.remove('active'));
 }
 
-// Вставляем кнопку «Назад» в шапку живой панели один раз (без правки HTML-партиала)
 function ensureLiveBackBar() {
     const content = document.getElementById('ch-live-content');
     if (!content || document.getElementById('ch-live-back')) return;
@@ -269,12 +240,10 @@ function ensureLiveBackBar() {
 function renderLivePanel(data) {
     const { challenge, is_joined, is_creator, tasks, leaderboard, prize_preview, posts } = data;
 
-    // Шапка
     document.getElementById('lp-emoji').textContent = challenge.banner_emoji || '🏆';
     document.getElementById('lp-title').textContent = challenge.title;
     document.getElementById('lp-desc').textContent  = challenge.description || '';
 
-    // Бейджи
     const badgesEl = document.getElementById('lp-badges');
     badgesEl.innerHTML = `
         <span class="ch-badge ch-badge-${challenge.status}">${STATUS_LABELS[challenge.status] || challenge.status}</span>
@@ -282,7 +251,6 @@ function renderLivePanel(data) {
         ${challenge.required_rank ? `<span class="ch-badge ch-badge-rank">⚔️ ${challenge.required_rank}+</span>` : ''}
     `;
 
-    // Статы
     const statsEl = document.getElementById('lp-stats');
     statsEl.innerHTML = `
         <div class="ch-live-stat"><div class="ch-live-stat-val" style="color:var(--accent-yellow)">${challenge.prize_pool_credits} ₡</div><div class="ch-live-stat-lbl">Призовой фонд</div></div>
@@ -291,7 +259,6 @@ function renderLivePanel(data) {
         <div class="ch-live-stat"><div class="ch-live-stat-val">${fmtDate(challenge.starts_at)} – ${fmtDate(challenge.ends_at)}</div><div class="ch-live-stat-lbl">Период</div></div>
     `;
 
-    // Прогресс-бар для активных
     const progressEl = document.getElementById('lp-progress');
     if (challenge.status === 'active') {
         const starts = new Date(challenge.starts_at).getTime();
@@ -307,7 +274,6 @@ function renderLivePanel(data) {
         progressEl.style.display = 'none';
     }
 
-    // Действия
     const actionsEl = document.getElementById('lp-actions');
     actionsEl.innerHTML = '';
     if (!is_joined && challenge.status !== 'finished') {
@@ -323,24 +289,17 @@ function renderLivePanel(data) {
         actionsEl.appendChild(badge);
     }
 
-    // Задачи
     renderLiveTasks(tasks, is_joined, challenge.status);
 
-    // Лидерборд
     renderLiveBoard(leaderboard, prize_preview);
     const finishWrap = document.getElementById('lp-finish-wrap');
     if (finishWrap) finishWrap.style.display = (is_creator && challenge.status !== 'finished') ? '' : 'none';
 
-    // Лента
     const isFinished = challenge.status === 'finished';
-    // В завершённом ивенте писать нельзя — только просмотр
+
     document.getElementById('lp-post-form').style.display = (is_joined && !isFinished) ? '' : 'none';
     renderLiveFeed(posts, isFinished);
 }
-
-// ──────────────────────────────────────────────────────────────
-// Задачи
-// ──────────────────────────────────────────────────────────────
 
 function renderLiveTasks(tasks, is_joined, status) {
     const list = document.getElementById('lp-tasks-list');
@@ -358,7 +317,6 @@ function makeLiveTaskCard(task, is_joined, status) {
     const isDone    = !!(comp && comp.completed_at);
     const isRunning = !!(comp && comp.timer_started_at && !comp.completed_at);
 
-    // Проверяем истёк ли таймер уже прямо сейчас (при загрузке страницы)
     let timerExpired = false;
     if (isRunning && comp.timer_started_at) {
         const startMs  = new Date(comp.timer_started_at.endsWith('Z') || comp.timer_started_at.includes('+')
@@ -368,7 +326,7 @@ function makeLiveTaskCard(task, is_joined, status) {
     }
 
     const canStart  = is_joined && status === 'active' && task.in_window && !isDone && !isRunning;
-    // Hold-кнопка только если таймер УЖЕ истёк; иначе показываем прогресс-бар
+
     const canFinish = is_joined && status === 'active' && isRunning && timerExpired;
     const showTimer = isRunning && !timerExpired;
 
@@ -413,7 +371,6 @@ function makeLiveTaskCard(task, is_joined, status) {
             </div>
         </div>`;
 
-    // Запускаем countdown только если таймер ещё не истёк
     if (isRunning && comp.timer_started_at && !timerExpired) {
         startCountdown(task.id, comp.id, comp.timer_started_at, task.duration_minutes);
     }
@@ -433,7 +390,7 @@ function holdBtnHtml(taskId, completionId) {
 }
 
 function startCountdown(taskId, completionId, startedAt, durationMin) {
-    // Сервер возвращает UTC без Z — добавляем
+
     const startStr = startedAt.endsWith('Z') || startedAt.includes('+') ? startedAt : startedAt + 'Z';
     const startMs = new Date(startStr).getTime();
     const totalMs = durationMin * 60 * 1000;
@@ -452,7 +409,7 @@ function startCountdown(taskId, completionId, startedAt, durationMin) {
             label.textContent = `Осталось: ${m}:${s.toString().padStart(2,'0')}`;
         } else {
             clearInterval(taskTimers[taskId]);
-            // Скрываем прогресс-бар, показываем Hold-кнопку
+
             const timerWrap = document.getElementById(`lp-timer-${taskId}`);
             if (timerWrap) timerWrap.style.display = 'none';
             const actionEl = document.getElementById(`lp-task-action-${taskId}`);
@@ -501,7 +458,7 @@ async function chCompleteTask(taskId, completionId) {
         const res = await api.request('POST', `/challenges/${currentChallenge.challenge.id}/tasks/${taskId}/complete`, null, true);
         clearInterval(taskTimers[taskId]);
         showToast(res.message);
-        // award_xp возвращает поле xp_gained (не xp_awarded) — иначе анимация не покажется
+
         showXpFloat(res.xp_result?.xp_gained ?? res.xp_result?.xp_awarded ?? 0);
         await refreshLivePanel(currentChallenge.challenge.id);
         await loadCharacter();
@@ -512,27 +469,19 @@ async function chCompleteTask(taskId, completionId) {
     }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Join
-// ──────────────────────────────────────────────────────────────
-
 async function joinChallenge(challengeId) {
     try {
         const res = await api.request('POST', `/challenges/${challengeId}/join`, null, true);
         showToast(`${res.message} 🏆 Фонд: ${res.prize_pool} ₡`);
         await loadChallenges();
         await loadCharacter();
-        // Если ивент уже активен — его задачи должны сразу появиться в Квестах.
+
         if (typeof loadTasks === 'function') {
             await loadTasks();
         }
         await refreshLivePanel(challengeId);
     } catch (e) { showToast(e.message, true); }
 }
-
-// ──────────────────────────────────────────────────────────────
-// Лидерборд
-// ──────────────────────────────────────────────────────────────
 
 function renderLiveBoard(leaderboard, prize_preview) {
     const prizesEl = document.getElementById('lp-prizes');
@@ -581,10 +530,6 @@ async function finishChallenge() {
     } catch (e) { showToast(e.message, true); }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Лента + комментарии
-// ──────────────────────────────────────────────────────────────
-
 function renderLiveFeed(posts, isFinished = false) {
     const list = document.getElementById('lp-feed-list');
     list.innerHTML = '';
@@ -597,7 +542,6 @@ function renderLiveFeed(posts, isFinished = false) {
 
 const EMOJI_MAP = { fire: '🔥', muscle: '💪', star: '⭐', like: '👍' };
 
-// Свой ли это контент (для кнопок удаления)
 function chIsMine(userId) {
     return userId && window.MY_USER_ID && String(userId) === String(window.MY_USER_ID);
 }
@@ -607,13 +551,11 @@ function makeChallengePostCard(post, isFinished = false) {
     card.className = `lp-post ${post.is_auto_generated ? 'auto-post' : ''}`;
     card.id = `lp-post-${post.id}`;
 
-    // Реакции — только одна активная. В завершённом ивенте только для вида (не кликаются).
     const myReaction = post.my_reactions && post.my_reactions.length > 0 ? post.my_reactions[0] : null;
     const reactionsHtml = Object.entries(EMOJI_MAP).map(([key, emoji]) => {
         const count  = (post.reactions && post.reactions[key]) || 0;
         const active = myReaction === key;
-        // В завершённом ивенте показываем только реакции, у которых есть счётчик,
-        // и без обработчика клика (просмотр).
+
         if (isFinished && count === 0) return '';
         const onClick = isFinished ? '' : `onclick="toggleReaction('${post.id}','${key}',this)"`;
         return `<button class="lp-reaction ${active ? 'active' : ''} ${isFinished ? 'lp-reaction-readonly' : ''}"
@@ -622,7 +564,6 @@ function makeChallengePostCard(post, isFinished = false) {
         </button>`;
     }).join('');
 
-    // Комментарии (+ кнопка удаления своих)
     const comments = post.comments || [];
     const commentsHtml = comments.map(c => `
         <div class="lp-comment" id="lp-comment-${c.id}">
@@ -641,12 +582,10 @@ function makeChallengePostCard(post, isFinished = false) {
     const commentCount = comments.length;
     const commentLabel = commentCount > 0 ? `Комментарии (${commentCount})` : 'Комментировать';
 
-    // Кнопка удаления своего поста (авто-посты не удаляем)
     const deletePostBtn = (chIsMine(post.author.user_id) && !post.is_auto_generated)
         ? `<button class="lp-post-del" title="Удалить пост" onclick="chDeletePost('${post.id}')">🗑</button>`
         : '';
 
-    // Форма комментария скрыта в завершённом ивенте
     const commentFormHtml = isFinished ? '' : `
         <div class="lp-comment-form">
             <input class="lp-comment-input" id="lp-comment-input-${post.id}"
@@ -680,7 +619,6 @@ function makeChallengePostCard(post, isFinished = false) {
     return card;
 }
 
-// ── Удаление поста / комментария (только свои) ────────────────
 async function chDeletePost(postId) {
     const ok = await confirmModal({
         title: 'Удалить пост?',
@@ -710,7 +648,7 @@ async function chDeleteComment(postId, commentId) {
             `/challenges/${currentChallenge.challenge.id}/posts/${postId}/comments/${commentId}`,
             null, true);
         document.getElementById(`lp-comment-${commentId}`)?.remove();
-        // Обновляем счётчик в кнопке
+
         const listEl = document.getElementById(`lp-comments-list-${postId}`);
         const cur = listEl ? listEl.querySelectorAll('.lp-comment').length : 0;
         const btn = document.querySelector(`#lp-post-${postId} .btn-toggle-comments`);
@@ -721,30 +659,29 @@ async function chDeleteComment(postId, commentId) {
 
 async function toggleReaction(postId, emoji, btn) {
     if (!currentChallenge) return;
-    // Оптимистичный UI — сначала обновляем, потом запрос
+
     const postEl = document.getElementById(`lp-post-${postId}`);
     const activeBtn = postEl?.querySelector('.lp-reaction.active');
     const isTogglingOff = activeBtn === btn;
 
-    // Снимаем все активные реакции в этом посте
     postEl?.querySelectorAll('.lp-reaction.active').forEach(b => b.classList.remove('active'));
 
     if (!isTogglingOff) btn.classList.add('active');
 
     try {
-        // Если была другая активная — сначала снимаем её
+
         if (activeBtn && activeBtn !== btn) {
             const oldEmoji = activeBtn.dataset.emoji;
             if (oldEmoji) await api.request('POST',
                 `/challenges/${currentChallenge.challenge.id}/posts/${postId}/react`,
                 { emoji: oldEmoji }, true);
         }
-        // Ставим / снимаем текущую
+
         await api.request('POST',
             `/challenges/${currentChallenge.challenge.id}/posts/${postId}/react`,
             { emoji }, true);
     } catch (e) {
-        // Откатываем UI при ошибке
+
         if (!isTogglingOff) btn.classList.remove('active');
         if (activeBtn && activeBtn !== btn) activeBtn.classList.add('active');
         showToast('Ошибка реакции', true);
@@ -764,7 +701,7 @@ async function chSendComment(postId) {
     if (!content) return;
     try {
         const res = await api.request('POST', `/challenges/${currentChallenge.challenge.id}/posts/${postId}/comments`, { content }, true);
-        // Добавляем комментарий в DOM
+
         const commentsEl = document.getElementById(`lp-comments-${postId}`);
         const commentForm = commentsEl?.querySelector('.lp-comment-form');
         const commentEl = document.createElement('div');
@@ -783,7 +720,7 @@ async function chSendComment(postId) {
             </div>`;
         const listEl = document.getElementById(`lp-comments-list-${postId}`);
         if (listEl) listEl.appendChild(commentEl);
-        // Обновляем счётчик
+
         const toggleBtn = commentsEl?.closest('.lp-post')?.querySelector('.btn-toggle-comments');
         if (toggleBtn) {
             const cur = listEl ? listEl.querySelectorAll('.lp-comment').length : 0;
@@ -812,25 +749,16 @@ async function submitPost() {
     finally { btn.disabled = false; }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Автотик статусов
-// ──────────────────────────────────────────────────────────────
-
 async function tickStatuses() {
     try {
         await api.request('POST', '/challenges/admin/tick', null, true);
         await loadChallenges();
-        // Тик мог перевести ивент upcoming → active либо active → finished.
-        // Перезагружаем Квесты, чтобы задачи такого ивента появились/исчезли там.
+
         if (typeof loadTasks === 'function') {
             await loadTasks();
         }
-    } catch (e) { /* тихо */ }
+    } catch (e) {  }
 }
-
-// ──────────────────────────────────────────────────────────────
-// Форма создания
-// ──────────────────────────────────────────────────────────────
 
 function initCreateForm() {
     document.getElementById('open-challenge-modal')?.addEventListener('click', openCreateModal);
@@ -857,14 +785,12 @@ function initCreateForm() {
 function openCreateModal() {
     const now   = new Date();
     const in30d = new Date(now.getTime() + 30 * 24 * 3600000);
-    // <input type="datetime-local"> работает в ЛОКАЛЬНОМ времени, поэтому формат
-    // тоже должен быть локальным (toISOString() даёт UTC и сдвигает значение).
+
     const fmtLocal = d => {
         const off = d.getTimezoneOffset() * 60000;
         return new Date(d.getTime() - off).toISOString().slice(0, 16);
     };
-    // Старт = сейчас: вместе с серверным фиксом ивент создаётся сразу активным,
-    // и его задачи появляются в Квестах без ожидания admin/tick.
+
     document.getElementById('ch-starts').value = fmtLocal(now);
     document.getElementById('ch-ends').value   = fmtLocal(in30d);
     document.getElementById('challenge-modal').style.display = 'flex';
@@ -1003,7 +929,7 @@ async function submitCreateForm(e) {
         showToast('Ивент создан! 🏆');
         await loadChallenges();
         await loadCharacter();
-        // На случай, если ивент стартует сразу — подтянуть его задачи в Квесты.
+
         if (typeof loadTasks === 'function') {
             await loadTasks();
         }
@@ -1017,10 +943,6 @@ async function submitCreateForm(e) {
     }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Utils
-// ──────────────────────────────────────────────────────────────
-
 function fmtDate(iso) {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
@@ -1028,7 +950,7 @@ function fmtDate(iso) {
 
 function fmtRelTime(iso) {
     if (!iso) return '';
-    // Сервер возвращает UTC без Z — добавляем
+
     const str = iso.endsWith('Z') || iso.includes('+') ? iso : iso + 'Z';
     const diff = Date.now() - new Date(str).getTime();
     const m = Math.floor(diff / 60000);

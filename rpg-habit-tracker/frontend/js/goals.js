@@ -24,7 +24,6 @@ const MONTH_NAMES_SHORT = [
     'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
 ];
 
-// ===== УТИЛИТЫ =====
 function getEmoji(goal) {
     return goal.emoji || GOAL_CAT_ICONS[goal.category] || '🎯';
 }
@@ -32,7 +31,6 @@ function getLabel(goal) {
     return GOAL_CAT_LABELS[goal.category] || 'Другое';
 }
 
-// ===== ЗАГРУЗКА =====
 async function loadGoals() {
     try {
         goals = await api.request('GET', '/goals/', null, true);
@@ -40,7 +38,6 @@ async function loadGoals() {
     } catch (e) { console.error(e); }
 }
 
-// ===== РЕНДЕР =====
 function renderGoals() {
     const list   = document.getElementById('goals-list');
     const addBtn = document.getElementById('open-goal-modal');
@@ -108,13 +105,11 @@ function renderGoals() {
         done.forEach(g => archiveList.appendChild(makeArchiveRow(g)));
     }
 
-    // Статистика в самом конце
     const statsDiv = document.createElement('div');
     statsDiv.id = 'goals-stats-bottom';
     statsDiv.className = 'goals-stats-row';
     list.appendChild(statsDiv);
-    
-    // Заполняем
+
     const active    = goals.filter(g => g.status === 'active').length;
     const completed = goals.filter(g => g.status === 'completed').length;
     const failed    = goals.filter(g => g.status === 'failed').length;
@@ -153,7 +148,6 @@ function toggleArchive() {
     localStorage.setItem('archive-collapsed', isHidden ? 'false' : 'true');
 }
 
-// ===== BOSS CARD =====
 function makeBossCard(goal) {
     const card = document.createElement('div');
     card.className = 'boss-card';
@@ -217,7 +211,6 @@ function makeBossCard(goal) {
     return card;
 }
 
-// ===== GOAL CARD =====
 function makeGoalCard(goal) {
     const card = document.createElement('div');
     card.className = `goal-card goal-rarity-${goal.rarity}`;
@@ -291,7 +284,6 @@ function toggleGoalCard(goalId) {
     if (!isOpen) setTimeout(() => focusSubtaskInput(goalId), 320);
 }
 
-// ===== ПОДЗАДАЧИ =====
 function renderSubtasksList(goal) {
     const subtasks = goal.subtasks || [];
     const canAdd   = subtasks.length < goal.max_subtasks;
@@ -343,12 +335,11 @@ async function submitSubtaskInline(goalId) {
             'POST', `/goals/${goalId}/subtasks`, { title }, true
         );
 
-        // Добавляем локально
         const goal = goals.find(g => g.id === goalId);
         if (goal) {
             goal.subtasks.push(newSubtask);
             goal.subtasks_count = goal.subtasks.length;
-            // Пересчитываем XP для всех подзадач (сервер уже обновил, перезагрузим для XP)
+
             await loadGoals();
             refreshSheetIfOpen();
         }
@@ -372,7 +363,6 @@ async function handleSubtaskKey(e, goalId) {
     }
 }
 
-// Локальное обновление без перезагрузки
 function updateSubtaskLocal(goalId, subtaskId, isDone) {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
@@ -382,15 +372,13 @@ function updateSubtaskLocal(goalId, subtaskId, isDone) {
     subtask.is_completed = isDone;
     subtask.completed_at = isDone ? new Date().toISOString() : null;
 
-    // Пересчитываем прогресс
     const total = goal.subtasks.length;
     const done  = goal.subtasks.filter(s => s.is_completed).length;
     goal.progress_percent = total > 0 ? Math.round((done / total) * 100) : 0;
     goal.subtasks_done = done;
 
-    // Перерендериваем только эту карточку
     rerenderGoalCard(goalId);
-    // Обновляем sheet если открыт
+
     refreshSheetIfOpen();
 }
 
@@ -399,17 +387,17 @@ function rerenderGoalCard(goalId) {
     if (!goal) return;
 
     if (goal.is_main_quest) {
-        // Boss card
+
         const old = document.querySelector(`.boss-card[data-id="${goalId}"]`);
         if (old) { const newCard = makeBossCard(goal); old.replaceWith(newCard); }
     } else {
-        // Обычная карточка
+
         const old = document.querySelector(`.goal-card[data-id="${goalId}"]`);
         if (old) {
             const wasOpen = old.querySelector('.goal-subtasks-panel')?.classList.contains('open');
             const newCard = makeGoalCard(goal);
             old.replaceWith(newCard);
-            // Восстанавливаем состояние аккордеона
+
             if (wasOpen) {
                 const panel = newCard.querySelector('.goal-subtasks-panel');
                 const btn   = newCard.querySelector('.goal-expand-btn');
@@ -420,7 +408,6 @@ function rerenderGoalCard(goalId) {
     }
 }
 
-// ===== ДЕЙСТВИЯ =====
 async function completeSubtask(goalId, subtaskId) {
     try {
         const result = await api.request(
@@ -429,7 +416,6 @@ async function completeSubtask(goalId, subtaskId) {
         const xp = result.xp_result;
         showToast(`+${xp.xp_gained} XP! ✓${xp.capped ? ' (лимит)' : ''}`);
 
-        // Обновляем локально — без перезагрузки
         updateSubtaskLocal(goalId, subtaskId, true);
         await loadCharacter();
     } catch (e) { showToast(e.message, true); }
@@ -442,7 +428,6 @@ async function uncompleteSubtask(goalId, subtaskId) {
         );
         showToast('Подзадача возвращена ↩');
 
-        // Обновляем локально — без перезагрузки
         updateSubtaskLocal(goalId, subtaskId, false);
         await loadCharacter();
     } catch (e) { showToast(e.message, true); }
@@ -452,7 +437,6 @@ async function deleteSubtask(goalId, subtaskId) {
     try {
         await api.request('DELETE', `/goals/${goalId}/subtasks/${subtaskId}`, null, true);
 
-        // Удаляем локально
         const goal = goals.find(g => g.id === goalId);
         if (goal) {
             goal.subtasks = goal.subtasks.filter(s => s.id !== subtaskId);
@@ -622,7 +606,6 @@ async function extendDeadline(goalId) {
     };
 }
 
-// ===== ARCHIVE =====
 function makeArchiveRow(goal) {
     const row = document.createElement('div');
     row.className = 'goal-archive-row';
@@ -643,7 +626,6 @@ function makeArchiveRow(goal) {
     return row;
 }
 
-// ===== BOTTOM SHEET =====
 function openGoalSheet(goalId) {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
@@ -724,7 +706,6 @@ function refreshSheetIfOpen() {
     }
 }
 
-// ===== МОДАЛКА СОЗДАНИЯ ЦЕЛИ =====
 document.getElementById('open-goal-modal')?.addEventListener('click', () => {
     document.getElementById('goal-modal').style.display = 'flex';
 });
@@ -776,7 +757,6 @@ document.getElementById('goal-form')?.addEventListener('submit', async e => {
     }
 });
 
-// ===== ПИКЕР ДЕДЛАЙНА =====
 let pickerMonth  = new Date(); pickerMonth.setDate(1);
 let selectedDate = null;
 

@@ -9,26 +9,20 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
 
-
 class OAuthProvider(str, enum.Enum):
     email = "email"
     google = "google"
     github = "github"
-
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=True)  # null для OAuth
+    hashed_password = Column(String(255), nullable=True)
     oauth_provider = Column(SAEnum(OAuthProvider), default=OAuthProvider.email)
     oauth_provider_id = Column(String(255), nullable=True)
 
-    # Уникальный @username для постов и упоминаний.
-    # nullable=True, потому что старые пользователи могут не иметь его сразу;
-    # auto-генерация при первом /auth/me. После — становится обязательным
-    # через эндпоинт /profile.
     username = Column(String(30), unique=True, nullable=True, index=True)
 
     is_verified = Column(Boolean, default=False)
@@ -38,11 +32,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # OTP для верификации email
     otp_code = Column(String(6), nullable=True)
     otp_expires_at = Column(DateTime, nullable=True)
 
-    # Relationships
     character = relationship("Character", back_populates="user", uselist=False)
     daily_tasks = relationship("DailyTask", back_populates="user")
     goals = relationship("Goal", back_populates="user")

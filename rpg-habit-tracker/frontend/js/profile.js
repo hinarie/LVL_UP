@@ -1,20 +1,14 @@
-// ════════════════════════════════════════════════════════════════
-// PROFILE.JS — расширенный профиль
-// Зависит от глобальных функций из social.js: avatarFor, escapeHtml,
-// relTime, makePostCard; и из app.js: character, loadCharacter, showToast.
-// ════════════════════════════════════════════════════════════════
 
 let profileState = {
-    profileData:  null,   // /social/profile
-    stats:        null,   // /profile/stats
-    achievements: null,   // /profile/achievements
-    history:      null,   // /profile/history
+    profileData:  null,
+    stats:        null,
+    achievements: null,
+    history:      null,
     historyType:  'xp',
     historyDays:  30,
     invCategory:  '',
 };
 
-// Эмодзи-аватарки для пикера
 const AVATAR_EMOJIS = [
     '🐣','🧒','👦','👧','🧑','👨','👩','🧔',
     '🧙','🧝','🧚','🧛','🧜','🧞','🦸','🦹',
@@ -22,13 +16,9 @@ const AVATAR_EMOJIS = [
     '🦄','🐲','🐉','👻','💀','🤖','👽','🎃',
 ];
 
-// ════════════════════════════════════════════════════════════════
-// ЗАГРУЗКА И РЕНДЕР
-// ════════════════════════════════════════════════════════════════
-
 async function loadProfile() {
     try {
-        // Параллельно тянем профиль (посты+друзья) и расширенную статистику
+
         const [profile, stats] = await Promise.all([
             api.request('GET', '/social/profile', null, true),
             api.request('GET', '/profile/stats', null, true),
@@ -48,11 +38,8 @@ function renderProfile() {
 
     const char = profile.character || {};
 
-    // Аватар: либо emoji из avatar_url (если короткий и не http), либо URL картинки, либо ранг
     setAvatarDisplay(char.avatar_url, stats.level);
 
-    // Главное имя: display_name (для людей), под ним @username (уникальный),
-    // ещё ниже — character_name (имя персонажа RPG)
     const username = profile.user?.username || char.username || '';
     setText('profile-char-name',    char.display_name || char.character_name || 'Герой');
     const handleEl = document.getElementById('profile-display-name');
@@ -72,20 +59,17 @@ function renderProfile() {
     setText('profile-email',        profile.user?.email || '');
     setText('profile-since',        stats.member_since ? formatMemberSince(stats.member_since) : '');
 
-    // Шапка-уровень
     setText('profile-level',        stats.level);
     setText('profile-level-xp',     `${stats.xp_current_level} / ${stats.xp_per_level} XP`);
     const fill = document.getElementById('profile-xp-fill');
     if (fill) fill.style.width = `${stats.xp_progress_pct}%`;
 
-    // Карточки
     setText('profile-streak',       stats.current_streak);
     setText('profile-xp-total',     stats.xp_total);
     setText('profile-credits',      stats.credits);
     setText('profile-friends',      profile.friends_count || 0);
     setText('profile-tasks-done',   stats.counts?.tasks_done || 0);
 
-    // Обзор
     setText('overview-xp-today',     stats.xp_earned_today);
     setText('overview-xp-cap',       stats.daily_xp_cap);
     const todayFill = document.getElementById('overview-xp-today-fill');
@@ -101,7 +85,6 @@ function renderProfile() {
     setText('overview-challenges',    stats.counts?.challenges_joined || 0);
     setText('overview-items',         stats.counts?.items_owned || 0);
 
-    // Посты (используем makePostCard из social.js)
     const postsList = document.getElementById('profile-posts-list');
     if (postsList) {
         if (!profile.posts || profile.posts.length === 0) {
@@ -135,10 +118,10 @@ function setUsernameHint(text, kind = 'muted') {
 function setAvatarDisplay(avatar_url, level) {
     const av = document.getElementById('profile-avatar');
     if (!av) return;
-    if (avatar_url && /^https?:\/\//.test(avatar_url)) {
+    if (avatar_url && /^https?:\/\
         av.innerHTML = `<img src="${escapeAttr(avatar_url)}" alt="avatar" onerror="this.parentElement.textContent='${escapeAttr(avatar_url.length <= 4 ? avatar_url : '')}'">`;
     } else if (avatar_url && avatar_url.length <= 4) {
-        // эмодзи
+
         av.textContent = avatar_url;
     } else if (typeof avatarFor === 'function') {
         av.textContent = avatarFor(level);
@@ -157,10 +140,6 @@ function formatMemberSince(iso) {
     if (isNaN(d.getTime())) return '';
     return 'С ' + d.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
 }
-
-// ════════════════════════════════════════════════════════════════
-// ТАБЫ
-// ════════════════════════════════════════════════════════════════
 
 function initProfileTabs() {
     const tabsEl = document.getElementById('profile-tabs');
@@ -181,10 +160,6 @@ function onProfileTabOpen(tab) {
     if (tab === 'achievements')  loadProfileAchievements();
     if (tab === 'history')       loadProfileHistory();
 }
-
-// ════════════════════════════════════════════════════════════════
-// КАСТОМИЗАЦИЯ (ИНВЕНТАРЬ)
-// ════════════════════════════════════════════════════════════════
 
 async function loadProfileInventory() {
     try {
@@ -271,10 +246,6 @@ function initInvFilters() {
     });
 }
 
-// ════════════════════════════════════════════════════════════════
-// ДОСТИЖЕНИЯ
-// ════════════════════════════════════════════════════════════════
-
 async function loadProfileAchievements() {
     try {
         const data = await api.request('GET', '/profile/achievements', null, true);
@@ -294,7 +265,6 @@ function renderAchievements() {
     const grid = document.getElementById('profile-ach-grid');
     if (!grid) return;
 
-    // Сначала открытые, потом по прогрессу
     const sorted = [...data.achievements].sort((a, b) => {
         if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
         return b.progress_pct - a.progress_pct;
@@ -321,9 +291,6 @@ function makeAchCard(ach) {
     return card;
 }
 
-// ════════════════════════════════════════════════════════════════
-// ИСТОРИЯ
-// ════════════════════════════════════════════════════════════════
 
 async function loadProfileHistory() {
     const list = document.getElementById('profile-history-list');
@@ -361,7 +328,6 @@ function renderHistory() {
     const data = profileState.history;
     if (!data) return;
 
-    // Сводка
     const summary = document.getElementById('profile-history-summary');
     if (summary) {
         const sign = data.total >= 0 ? '+' : '';
@@ -375,7 +341,6 @@ function renderHistory() {
         `;
     }
 
-    // Список
     const list = document.getElementById('profile-history-list');
     if (!list) return;
     if (!data.items.length) {
@@ -404,7 +369,6 @@ function renderHistory() {
     });
 }
 
-// Простой SVG-спарклайн
 function renderSparkline(chart, type) {
     if (!chart || chart.length < 2) return '';
     const W = 320, H = 50, P = 4;
@@ -457,9 +421,6 @@ function initHistoryControls() {
     }
 }
 
-// ════════════════════════════════════════════════════════════════
-// МОДАЛКИ: РЕДАКТИРОВАНИЕ
-// ════════════════════════════════════════════════════════════════
 
 function showModal(id) {
     const m = document.getElementById(id);
@@ -471,7 +432,6 @@ function hideModal(id) {
 }
 
 function initProfileEditing() {
-    // Открыть редактирование имени
     document.getElementById('profile-edit-name')?.addEventListener('click', () => {
         const char = profileState.profileData?.character || {};
         const user = profileState.profileData?.user || {};
@@ -481,12 +441,10 @@ function initProfileEditing() {
         if (dn) dn.value = char.display_name || '';
         if (cn) cn.value = char.character_name || '';
         if (un) un.value = user.username || char.username || '';
-        // Сбрасываем подсказку
         setUsernameHint('', 'muted');
         showModal('profile-name-modal');
     });
 
-    // Live-проверка username (debounce 400мс)
     let usernameCheckTimer = null;
     document.getElementById('edit-username')?.addEventListener('input', (e) => {
         clearTimeout(usernameCheckTimer);
@@ -518,7 +476,6 @@ function initProfileEditing() {
         }, 400);
     });
 
-    // Сохранить имя/ник
     document.getElementById('save-profile-name')?.addEventListener('click', async () => {
         const display_name   = document.getElementById('edit-display-name')?.value?.trim() || '';
         const character_name = document.getElementById('edit-character-name')?.value?.trim() || '';
@@ -542,7 +499,6 @@ function initProfileEditing() {
         }
     });
 
-    // Открыть редактирование аватара
     document.getElementById('profile-avatar-edit')?.addEventListener('click', () => {
         renderAvatarPicker();
         const urlInput = document.getElementById('edit-avatar-url');
@@ -551,7 +507,6 @@ function initProfileEditing() {
         showModal('profile-avatar-modal');
     });
 
-    // Сохранить аватар
     document.getElementById('save-avatar')?.addEventListener('click', async () => {
         const selectedEl = document.querySelector('.avatar-picker-cell.selected');
         const urlVal = document.getElementById('edit-avatar-url')?.value?.trim() || '';
@@ -567,7 +522,6 @@ function initProfileEditing() {
         }
     });
 
-    // Сброс аватара
     document.getElementById('reset-avatar')?.addEventListener('click', async () => {
         try {
             await api.request('PATCH', '/profile', { avatar_url: '' }, true);
@@ -577,11 +531,9 @@ function initProfileEditing() {
         } catch (e) { showToast(e.message, true); }
     });
 
-    // Закрытие модалок
     document.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', () => hideModal(btn.dataset.close));
     });
-    // Клик по фону модалки — закрыть
     ['profile-name-modal', 'profile-avatar-modal'].forEach(id => {
         const m = document.getElementById(id);
         if (m) m.addEventListener('click', (e) => { if (e.target === m) hideModal(id); });
@@ -607,10 +559,6 @@ function renderAvatarPicker() {
         picker.appendChild(cell);
     });
 }
-
-// ════════════════════════════════════════════════════════════════
-// ИНИЦИАЛИЗАЦИЯ
-// ════════════════════════════════════════════════════════════════
 
 initProfileTabs();
 initInvFilters();

@@ -125,9 +125,6 @@
     .shop-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ────────── Превью в карточках магазина ────────── */
-
-/* Тема — три цветных полоски */
 .theme-preview {
     display: flex;
     gap: 4px;
@@ -144,7 +141,6 @@
 }
 .shop-card:hover .theme-preview-swatch:nth-child(2) { transform: scaleY(1.1); }
 
-/* Фон — кружок-миниатюра */
 .bg-preview {
     width: 70px;
     height: 70px;

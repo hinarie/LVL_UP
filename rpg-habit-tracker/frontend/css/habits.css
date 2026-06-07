@@ -1,4 +1,4 @@
-/* Layout */
+
 #page-habits {
     align-items: stretch;
     justify-content: flex-start;
@@ -33,7 +33,6 @@
     gap: 16px;
 }
 
-/* Карточка "Сегодня" */
 .habits-today-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -121,7 +120,6 @@
     color: var(--accent-red);
 }
 
-/* Мини-календарь */
 .habits-mini-cal-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -223,7 +221,6 @@
 .cal-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 .cal-legend-empty { background: var(--border-bright); }
 
-/* Карточка привычки */
 .habits-list { display: flex; flex-direction: column; gap: 10px; }
 
 .habit-card {
@@ -318,7 +315,6 @@
     font-size: 11px;
 }
 
-/* Стрик-бар */
 .streak-bar-wrap { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .streak-bar { display: flex; gap: 3px; flex: 1; }
 .streak-pip { flex: 1; height: 6px; border-radius: 3px; transition: var(--transition); }
@@ -326,7 +322,6 @@
 .pip-done { box-shadow: 0 0 4px currentColor; }
 .streak-bar-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
 
-/* Пикер длительности */
 .duration-picker {
     display: flex;
     align-items: center;
@@ -380,7 +375,6 @@
 
 .dur-clear:hover { border-color: var(--accent-red); color: var(--accent-red); }
 
-/* Модалка привычки */
 .habit-modal-wide { max-width: 520px; }
 
 .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -485,7 +479,6 @@
     opacity: 0.4;
 }
 
-/* Адаптация */
 @media (max-width: 768px) {
     #page-habits { height: auto; overflow: visible; }
     .habits-layout { grid-template-columns: 1fr; height: auto; }

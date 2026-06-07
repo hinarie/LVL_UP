@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 
-
 class ShopItemResponse(BaseModel):
     id: str
     name: str
@@ -17,7 +16,6 @@ class ShopItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class InventoryItemResponse(BaseModel):
     id: str

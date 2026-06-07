@@ -3,24 +3,21 @@ from typing import Optional
 from datetime import datetime
 from enum import Enum
 
-
 class GoalRarity(str, Enum):
-    common    = "common"
-    rare      = "rare"
-    epic      = "epic"
+    common = "common"
+    rare = "rare"
+    epic = "epic"
     legendary = "legendary"
 
-
 class GoalCategory(str, Enum):
-    health     = "health"
-    career     = "career"
-    learning   = "learning"
-    finance    = "finance"
-    creative   = "creative"
-    social     = "social"
-    travel     = "travel"
-    other      = "other"
-
+    health = "health"
+    career = "career"
+    learning = "learning"
+    finance = "finance"
+    creative = "creative"
+    social = "social"
+    travel = "travel"
+    other = "other"
 
 class GoalCreate(BaseModel):
     title: str
@@ -37,7 +34,6 @@ class GoalCreate(BaseModel):
             raise ValueError('Название не может быть пустым')
         return v.strip()
 
-
 class SubTaskCreate(BaseModel):
     title: str
     xp_reward: int = 10
@@ -48,7 +44,6 @@ class SubTaskCreate(BaseModel):
         if v < 1:
             raise ValueError('XP должно быть больше 0')
         return v
-
 
 class DeadlineExtendRequest(BaseModel):
     new_deadline: datetime

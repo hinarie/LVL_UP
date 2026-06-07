@@ -1,7 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
-   PROFILE — расширенный профиль с табами, достижениями, историей
-   Палитра/типографика наследуется от base.css.
-   ═══════════════════════════════════════════════════════════════ */
+
 
 .profile-wrap {
     max-width: 1100px;
@@ -12,7 +9,6 @@
     gap: 24px;
 }
 
-/* ─── HERO ─────────────────────────────────────────────────── */
 .profile-hero {
     position: relative;
     background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
@@ -41,7 +37,6 @@
     padding: 28px;
 }
 
-/* Аватар */
 .profile-avatar-wrap {
     position: relative;
     width: 120px;
@@ -77,7 +72,6 @@
 }
 .profile-avatar-edit:hover { background: var(--accent-purple-bright); transform: scale(1.08); }
 
-/* Идентификатор */
 .profile-id { min-width: 0; }
 .profile-name-row {
     display: flex; align-items: center; gap: 10px;
@@ -125,7 +119,6 @@
 .profile-since { color: var(--text-secondary); }
 .profile-email { font-size: 12px; color: var(--text-muted); word-break: break-all; }
 
-/* Карточка уровня */
 .profile-level-card {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
@@ -165,7 +158,6 @@
     box-shadow: 0 0 12px var(--accent-purple-glow);
 }
 
-/* Стат-карточки */
 .profile-statgrid {
     position: relative;
     display: grid;
@@ -197,7 +189,6 @@
     text-transform: uppercase;
 }
 
-/* ─── ТАБЫ ───────────────────────────────────────────────── */
 .profile-tabs {
     display: flex;
     gap: 4px;
@@ -230,7 +221,6 @@
     box-shadow: 0 4px 16px var(--accent-purple-glow);
 }
 
-/* ─── ПАНЕЛИ ─────────────────────────────────────────────── */
 .profile-pane { display: none; animation: profile-fade 0.25s ease; }
 .profile-pane.active { display: block; }
 @keyframes profile-fade {
@@ -244,7 +234,6 @@
 }
 .profile-section-head p { font-size: 13px; color: var(--text-secondary); margin: 0; }
 
-/* Обзор */
 .profile-cards-row {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -268,7 +257,6 @@
     border-radius: 2px; transition: width 0.4s ease;
 }
 
-/* Кастомизация — инвентарь */
 .profile-inv-filters {
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
 }
@@ -344,7 +332,6 @@
 }
 .profile-inv-empty-icon { font-size: 48px; margin-bottom: 12px; }
 
-/* Достижения */
 .profile-ach-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -395,7 +382,6 @@
     letter-spacing: 0.5px;
 }
 
-/* История */
 .profile-history-controls {
     display: flex; justify-content: space-between; gap: 12px;
     flex-wrap: wrap; margin-bottom: 16px;
@@ -449,7 +435,6 @@
     background-clip: text;
 }
 
-/* Спарклайн */
 .profile-spark { flex: 1; min-width: 200px; height: 50px; }
 
 .profile-history-list { display: flex; flex-direction: column; gap: 8px; }
@@ -485,7 +470,6 @@
     color: var(--text-muted); font-size: 13px;
 }
 
-/* Аватар-пикер в модалке */
 .avatar-picker {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -518,7 +502,6 @@
 }
 .btn-ghost:hover { border-color: var(--border-bright); color: var(--text-primary); }
 
-/* ─── АДАПТИВ ───────────────────────────────────────────── */
 @media (max-width: 900px) {
     .profile-hero-content {
         grid-template-columns: 1fr;
@@ -545,8 +528,6 @@
     .profile-tab { padding: 8px 10px; font-size: 12px; }
 }
 
-
-/* Username @-handle в шапке профиля */
 .profile-handle {
     color: var(--accent-purple-bright);
     font-weight: 600;
@@ -557,7 +538,6 @@
     font-size: 12px;
 }
 
-/* Подсказки в полях редактирования */
 .field-hint-inline {
     font-size: 11px;
     color: var(--text-muted);

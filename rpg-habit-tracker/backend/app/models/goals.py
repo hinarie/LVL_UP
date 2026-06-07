@@ -9,20 +9,17 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
 
-
 class GoalStatus(str, enum.Enum):
     active = "active"
     completed = "completed"
     failed = "failed"
     archived = "archived"
 
-
 class GoalRarity(str, enum.Enum):
-    common = "common"       # обычный   — макс 150 XP бонус
-    rare = "rare"           # редкий    — макс 250 XP бонус
-    epic = "epic"           # эпический — макс 400 XP бонус
-    legendary = "legendary" # легендарный — макс 600 XP бонус
-
+    common = "common"
+    rare = "rare"
+    epic = "epic"
+    legendary = "legendary"
 
 class Goal(Base):
     __tablename__ = "goals"
@@ -32,11 +29,11 @@ class Goal(Base):
 
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    category = Column(String(50), nullable=True)   # здоровье, карьера, учёба...
-    emoji = Column(String(10), nullable=True)       # иконка цели
+    category = Column(String(50), nullable=True)
+    emoji = Column(String(10), nullable=True)
     rarity = Column(SAEnum(GoalRarity), default=GoalRarity.common)
     status = Column(SAEnum(GoalStatus), default=GoalStatus.active)
-    is_main_quest = Column(Boolean, default=False)  # главный квест (boss)
+    is_main_quest = Column(Boolean, default=False)
 
     deadline = Column(DateTime, nullable=True)
     deadline_extensions = Column(Integer, default=0)
@@ -44,12 +41,10 @@ class Goal(Base):
 
     progress_percent = Column(Integer, default=0)
 
-    # Античит: лимиты
     max_subtasks = Column(Integer, default=20)
     subtasks_completed_today = Column(Integer, default=0)
     subtasks_cap_reset_date = Column(DateTime, nullable=True)
 
-    # XP бонус за завершение цели (начисляется один раз)
     completion_xp_bonus = Column(Integer, default=0)
     completion_xp_granted = Column(Boolean, default=False)
 
@@ -65,40 +60,33 @@ class Goal(Base):
         order_by="SubTask.order_index"
     )
 
-
-# XP бонус при завершении цели (50% от total)
 RARITY_COMPLETION_BONUS = {
-    GoalRarity.common:    60,
-    GoalRarity.rare:      100,
-    GoalRarity.epic:      180,
+    GoalRarity.common: 60,
+    GoalRarity.rare: 100,
+    GoalRarity.epic: 180,
     GoalRarity.legendary: 300,
 }
 
-# XP за подзадачу (50% делится поровну — вычисляется динамически)
-# Это максимум за одну подзадачу
 RARITY_SUBTASK_MAX_XP = {
-    GoalRarity.common:    5,
-    GoalRarity.rare:      8,
-    GoalRarity.epic:      10,
+    GoalRarity.common: 5,
+    GoalRarity.rare: 8,
+    GoalRarity.epic: 10,
     GoalRarity.legendary: 12,
 }
 
-# Максимум подзадач
 RARITY_MAX_SUBTASKS = {
-    GoalRarity.common:    10,
-    GoalRarity.rare:      15,
-    GoalRarity.epic:      20,
+    GoalRarity.common: 10,
+    GoalRarity.rare: 15,
+    GoalRarity.epic: 20,
     GoalRarity.legendary: 25,
 }
 
-# Минимальный дедлайн в днях (0 = без дедлайна можно)
 RARITY_MIN_DEADLINE_DAYS = {
-    GoalRarity.common:    3,
-    GoalRarity.rare:      7,
-    GoalRarity.epic:      14,
+    GoalRarity.common: 3,
+    GoalRarity.rare: 7,
+    GoalRarity.epic: 14,
     GoalRarity.legendary: 30,
 }
-
 
 class SubTask(Base):
     __tablename__ = "subtasks"

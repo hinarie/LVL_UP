@@ -1,8 +1,5 @@
-/* ═══════════════════════════════════════════════════════════════
-   УВЕДОМЛЕНИЯ — колокольчик в хедере + дропдаун со списком
-   ═══════════════════════════════════════════════════════════════ */
 
-/* ── Кнопка-колокольчик ─────────────────────────────────────── */
+
 .notif-bell {
     position: relative;
     width: 38px;
@@ -57,7 +54,6 @@
     pointer-events: none;
 }
 
-/* ── Дропдаун ───────────────────────────────────────────────── */
 .notif-dropdown {
     position: fixed;
     top: calc(var(--header-h) + 8px);
@@ -115,7 +111,6 @@
 .notif-act-danger { color: var(--text-muted); }
 .notif-act-danger:hover { color: var(--accent-red, #e54848); }
 
-/* ── Список ──────────────────────────────────────────────── */
 .notif-list {
     overflow-y: auto;
     flex: 1;
@@ -229,7 +224,6 @@
 .notif-item:hover .notif-del { opacity: 1; }
 .notif-del:hover { background: var(--bg-card); color: var(--accent-red, #e54848); }
 
-/* ── Бэкдроп — для мобильной шторки ────────────────────── */
 .notif-backdrop {
     position: fixed;
     inset: 0;
@@ -243,7 +237,6 @@
     to   { opacity: 1; }
 }
 
-/* ── Адаптация под мобилку ───────────────────────────── */
 @media (max-width: 768px) {
     .notif-bell {
         width: 34px;
@@ -263,7 +256,7 @@
         border-radius: 18px 18px 0 0;
         border-bottom: none;
         animation: notif-sheet-in 0.22s cubic-bezier(0.32, 0.72, 0, 1);
-        /* Чтобы не залезать под мобильную нижнюю навигацию */
+
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
     @keyframes notif-sheet-in {
@@ -271,7 +264,7 @@
         to   { transform: translateY(0); }
     }
 
-    /* Полоска-индикатор сверху как в нативных шторках */
+
     .notif-dropdown::before {
         content: '';
         display: block;
@@ -283,5 +276,5 @@
         flex-shrink: 0;
     }
 
-    .notif-del { opacity: 1; } /* на тач-устройствах нечем «навестись» */
+    .notif-del { opacity: 1; }
 }

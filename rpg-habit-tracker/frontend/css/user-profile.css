@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
-   USER PROFILE MODAL — просмотр чужого профиля
-   ═══════════════════════════════════════════════════════════════ */
+
 
 .up-overlay {
     position: fixed;
@@ -74,7 +72,6 @@
 }
 .up-error-icon { font-size: 48px; margin-bottom: 12px; }
 
-/* ── HERO ───────────────────────────────────────────────────── */
 .up-hero-wrap {
     position: relative;
     border-radius: var(--radius);
@@ -251,7 +248,6 @@
     border-color: var(--border-bright);
 }
 
-/* ── ТАБЫ ───────────────────────────────────────────────────── */
 .up-tabs {
     display: flex;
     gap: 4px;
@@ -286,7 +282,6 @@
 
 .up-pane { min-height: 200px; }
 
-/* ── ОБЗОР ──────────────────────────────────────────────────── */
 .up-stats {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -316,7 +311,6 @@
     margin-top: 2px;
 }
 
-/* ── ДОСТИЖЕНИЯ ─────────────────────────────────────────────── */
 .up-ach-head {
     font-size: 13px;
     color: var(--text-secondary);
@@ -365,7 +359,6 @@
 }
 .up-ach-prog  { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
 
-/* ── НА ГЕРОЕ ───────────────────────────────────────────────── */
 .up-gear-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -386,14 +379,12 @@
 .up-gear-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
 .up-gear-rar  { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-top: 2px; }
 
-/* ── ПОСТЫ внутри чужого профиля ────────────────────────────── */
 .up-posts {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* ── АДАПТИВ ────────────────────────────────────────────────── */
 @media (max-width: 720px) {
     .up-overlay { padding: 16px 8px; }
     .up-body    { padding: 18px; }

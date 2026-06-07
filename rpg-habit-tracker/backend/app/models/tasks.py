@@ -9,18 +9,15 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
 
-
 class TaskDifficulty(str, enum.Enum):
-    easy = "easy"       # +10 XP, мин. 5 мин
-    medium = "medium"   # +25 XP, мин. 15 мин
-    hard = "hard"       # +50 XP, мин. 60 мин
-
+    easy = "easy"
+    medium = "medium"
+    hard = "hard"
 
 class TaskStatus(str, enum.Enum):
     active = "active"
     done = "done"
     archived = "archived"
-
 
 class DailyTask(Base):
     __tablename__ = "daily_tasks"

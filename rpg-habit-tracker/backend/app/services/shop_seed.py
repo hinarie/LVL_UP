@@ -66,7 +66,6 @@ INITIAL_ITEMS = [
      "effect_type": "double_xp", "effect_duration": 180, "effect_value": 2},
 ]
 
-
 async def seed_shop(db: AsyncSession):
     from app.models.shop import InventoryItem
 

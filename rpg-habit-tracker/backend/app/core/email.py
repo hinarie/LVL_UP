@@ -7,14 +7,11 @@ from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from app.core.config import settings
 
-
 def generate_otp() -> str:
     return "".join(random.choices(string.digits, k=6))
 
-
 def get_otp_expiry() -> datetime:
     return datetime.utcnow() + timedelta(minutes=10)
-
 
 def _render_otp_template(otp_code: str) -> str:
     template_path = Path(__file__).parent.parent / "templates" / "otp_email.html"
@@ -22,7 +19,6 @@ def _render_otp_template(otp_code: str) -> str:
         template = template_path.read_text(encoding="utf-8")
         return template.replace("{{ otp_code }}", otp_code)
     except FileNotFoundError:
-        # Fallback: простое текстовое письмо
         return f"""
         <html><body style="background:#0a0a0f;color:#f1f0ff;
         font-family:sans-serif;padding:40px;text-align:center;">
@@ -34,14 +30,11 @@ def _render_otp_template(otp_code: str) -> str:
         </body></html>
         """
 
-
 async def send_otp_email(email: str, otp: str):
-    # Всегда печатаем в консоль (удобно для разработки)
     print(f"\n{'='*40}")
     print(f"📧 OTP для {email}: {otp}")
     print(f"{'='*40}\n")
 
-    # Если SMTP не настроен — только консоль
     if not settings.MAIL_USERNAME or settings.MAIL_USERNAME == "your@email.com":
         print("⚠️  SMTP не настроен, письмо отправлено только в консоль")
         return
@@ -54,7 +47,6 @@ async def send_otp_email(email: str, otp: str):
         message["From"] = f"LVL UP <{settings.MAIL_FROM}>"
         message["To"] = email
 
-        # Текстовая версия (fallback)
         text_part = MIMEText(
             f"Твой код подтверждения LVL UP: {otp}\n\nДействует 10 минут.",
             "plain",

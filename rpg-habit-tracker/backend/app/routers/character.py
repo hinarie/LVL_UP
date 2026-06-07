@@ -9,7 +9,6 @@ from app.services.xp_service import XP_PER_LEVEL, DAILY_XP_CAP
 
 router = APIRouter(prefix="/character", tags=["character"])
 
-
 @router.get("/")
 async def get_character(
     db: AsyncSession = Depends(get_db),
@@ -42,9 +41,8 @@ async def get_character(
         "xp_earned_today": char.xp_earned_today,
         "daily_xp_cap": DAILY_XP_CAP,
         "double_xp_active": char.double_xp_active,
-        # Косметика — фронт использует их для применения темы/фона/рамки
-        "active_theme":      char.active_theme,
+        "active_theme": char.active_theme,
         "active_background": char.active_background,
-        "active_frame":      char.active_frame,
-        "avatar_url":        char.avatar_url,
+        "active_frame": char.active_frame,
+        "avatar_url": char.avatar_url,
     }

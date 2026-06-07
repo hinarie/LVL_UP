@@ -38,16 +38,11 @@ function initNavigation() {
             document.getElementById(`page-${page}`)?.classList.add('active');
             window.scrollTo(0, 0);
 
-            // Обновляем данные при переходе на вкладку, чтобы подтянуть свежие изменения
-            // (например, задачи ивента, который только что стал активным).
             onPageShown(page);
         });
     });
 }
 
-// Перезагрузка данных конкретной страницы при её открытии.
-// Главное здесь — Квесты: туда подмешиваются задачи активных ивентов,
-// а статус ивента мог измениться (upcoming → active) уже после первой загрузки.
 async function onPageShown(page) {
     try {
         switch (page) {

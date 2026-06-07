@@ -46,7 +46,7 @@ function dateToStr(d) {
 
 async function loadHabits() {
     try {
-        const tz = -new Date().getTimezoneOffset(); // +300 для UTC+5
+        const tz = -new Date().getTimezoneOffset();
         habits = await api.request('GET', `/habits/?tz_offset=${tz}`, null, true);
         renderHabits();
         renderTodayPanel();
@@ -54,7 +54,6 @@ async function loadHabits() {
     } catch (e) { console.error(e); }
 }
 
-// ===== ПАНЕЛЬ "СЕГОДНЯ" =====
 function renderTodayPanel() {
     const today = new Date();
     const todayList   = document.getElementById('today-habits-list');
@@ -147,7 +146,6 @@ async function uncompleteHabit(habitId) {
     } catch (e) { showToast(e.message, true); }
 }
 
-// Обновляет локальное состояние привычки без перезагрузки
 function updateHabitLocalDone(habitId, done) {
     const idx = habits.findIndex(h => h.id === habitId);
     if (idx === -1) return;
@@ -166,7 +164,6 @@ function updateHabitLocalDone(habitId, done) {
     }
 }
 
-// ===== МИНИ-КАЛЕНДАРЬ =====
 function renderMiniCalendar() {
     const grid  = document.getElementById('mini-cal-grid');
     const title = document.getElementById('mini-cal-title');
@@ -182,7 +179,6 @@ function renderMiniCalendar() {
 
     grid.innerHTML = '';
 
-    // Пустые ячейки в начале — используем невидимые div
     for (let i = 0; i < startDow; i++) {
         const empty = document.createElement('div');
         empty.style.visibility = 'hidden';
@@ -196,11 +192,10 @@ function renderMiniCalendar() {
         const isToday  = dateStr === todayStr;
         const isFuture = dateStr > todayStr;
 
-        // Привычки которые существовали в этот день И запланированы на него
         const activeOnDay = habits.filter(h => {
             if (!h.calendar) return false;
             const calEntry = h.calendar.find(c => c.date === dateStr);
-            if (!calEntry) return false; // привычки ещё не существовало
+            if (!calEntry) return false;
             const dateObj = new Date(year, month, day);
             return isHabitScheduledToday(h, dateObj);
         });
@@ -211,10 +206,10 @@ function renderMiniCalendar() {
         if (total > 0) {
             activeOnDay.forEach(h => {
                 if (isToday) {
-                    // Для сегодня используем completed_today — всегда актуально
+
                     if (h.completed_today) doneCount++;
                 } else {
-                    // Для прошлых дней смотрим в calendar
+
                     const found = h.calendar.find(c => c.date === dateStr);
                     if (found?.done) doneCount++;
                 }
@@ -226,9 +221,9 @@ function renderMiniCalendar() {
             if (isToday) {
                 if (doneCount === total)   dotClass = 'cal-cell-full';
                 else if (doneCount > 0)    dotClass = 'cal-cell-partial';
-                // 0 выполнено сегодня — пустой, не красный
+
             } else {
-                // Прошлые дни
+
                 if (doneCount === total)   dotClass = 'cal-cell-full';
                 else if (doneCount > 0)    dotClass = 'cal-cell-partial';
                 else                       dotClass = 'cal-cell-miss';
@@ -261,7 +256,6 @@ document.getElementById('cal-next').addEventListener('click', () => {
     renderMiniCalendar();
 });
 
-// ===== СПИСОК ПРИВЫЧЕК =====
 function renderHabits() {
     const list = document.getElementById('habits-list');
     if (habits.length === 0) {
@@ -315,7 +309,6 @@ function makeHabitCard(habit, isDimmed) {
 
     const todayStr = getTodayStr();
 
-    // Стрик-бар — ровно 14 ячеек
     const streakBar = Array.from({length: 14}, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - (13 - i));
@@ -330,16 +323,15 @@ function makeHabitCard(habit, isDimmed) {
         let cls = 'pip-empty', sty = '';
 
         if (!existed) {
-            cls = 'pip-empty'; // до создания привычки
+            cls = 'pip-empty';
         } else if (calEntry.done) {
             cls = 'pip-done';
             sty = `background:${color}`;
         } else if (!scheduled) {
-            cls = 'pip-skip'; // не запланирована в этот день
+            cls = 'pip-skip';
         } else if (isPast) {
-            cls = 'pip-miss'; // прошлый день, не выполнена
+            cls = 'pip-miss';
         }
-        // isToday && !done → pip-empty
 
         return `<div class="streak-pip ${cls}" style="${sty}" title="${ds}"></div>`;
     }).join('');
@@ -426,7 +418,6 @@ async function deleteHabit(habitId) {
     }
 }
 
-// ===== ПИКЕР ДЛИТЕЛЬНОСТИ =====
 let durHours = 0, durMins = 0;
 
 function updateDurDisplay() {
@@ -454,7 +445,6 @@ document.getElementById('dur-clear-btn').addEventListener('click', () => {
     updateDurDisplay();
 });
 
-// ===== МОДАЛКА =====
 const habitModal = document.getElementById('habit-modal');
 
 document.getElementById('open-habit-modal').addEventListener('click', () => {

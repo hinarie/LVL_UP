@@ -13,7 +13,6 @@ from app.core.deps import get_current_user
 
 router = APIRouter(prefix="/shop", tags=["shop"])
 
-
 def shop_item_to_dict(item: ShopItem) -> dict:
     return {
         "id": str(item.id),
@@ -29,7 +28,6 @@ def shop_item_to_dict(item: ShopItem) -> dict:
         "is_available": item.is_available,
     }
 
-
 def inv_item_to_dict(inv: InventoryItem, item: ShopItem) -> dict:
     return {
         "id": str(inv.id),
@@ -43,7 +41,6 @@ def inv_item_to_dict(inv: InventoryItem, item: ShopItem) -> dict:
         "effect_type": item.effect_type,
         "rarity": item.rarity.value,
     }
-
 
 @router.get("/items")
 async def get_shop_items(
@@ -70,7 +67,6 @@ async def get_shop_items(
         {**shop_item_to_dict(item), "owned": str(item.id) in owned_ids}
         for item in items
     ]
-
 
 @router.post("/buy/{item_id}")
 async def buy_item(
@@ -137,7 +133,6 @@ async def buy_item(
         "item": inv_item_to_dict(inv_item, item),
     }
 
-
 @router.get("/inventory")
 async def get_inventory(
     db: AsyncSession = Depends(get_db),
@@ -157,7 +152,6 @@ async def get_inventory(
         if item and item.is_available:
             response.append(inv_item_to_dict(inv, item))
     return response
-
 
 @router.post("/use/{inv_item_id}")
 async def use_item(
@@ -213,7 +207,6 @@ async def use_item(
 
     await db.commit()
     return {"message": message}
-
 
 @router.post("/equip/{inv_item_id}")
 async def equip_item(

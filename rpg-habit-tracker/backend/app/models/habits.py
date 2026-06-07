@@ -8,7 +8,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
 
-
 class Habit(Base):
     __tablename__ = "habits"
 
@@ -21,12 +20,11 @@ class Habit(Base):
     xp_reward = Column(Integer, default=5)
     is_active = Column(Boolean, default=True)
 
-    # Новые поля
     category = Column(String(50), default="other")
     frequency = Column(String(20), default="daily")
-    frequency_days = Column(String(20), nullable=True)  # "0,1,2,3,4" — пн-пт
-    reminder_time = Column(String(20), nullable=True)   # morning/afternoon/evening
-    color = Column(String(7), nullable=True)            # #hex
+    frequency_days = Column(String(20), nullable=True)
+    reminder_time = Column(String(20), nullable=True)
+    color = Column(String(7), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -34,7 +32,6 @@ class Habit(Base):
     completions = relationship(
         "HabitCompletion", back_populates="habit", cascade="all, delete-orphan"
     )
-
 
 class HabitCompletion(Base):
     __tablename__ = "habit_completions"

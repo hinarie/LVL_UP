@@ -18,17 +18,14 @@ from app.services.username_util import ensure_username
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-
 @router.post("/register", status_code=201)
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    # Проверяем нет ли уже такого email
     result = await db.execute(select(User).where(User.email == data.email))
     existing = result.scalar_one_or_none()
 
     if existing:
         if existing.is_verified:
             raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
-        # Если не верифицирован — обновляем OTP и отправляем заново
         otp = generate_otp()
         existing.otp_code = otp
         existing.otp_expires_at = get_otp_expiry()
@@ -50,7 +47,6 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await send_otp_email(data.email, otp)
     return {"message": "Код подтверждения отправлен на email"}
-
 
 @router.post("/verify-otp")
 async def verify_otp(data: VerifyOTPRequest, db: AsyncSession = Depends(get_db)):
@@ -74,7 +70,6 @@ async def verify_otp(data: VerifyOTPRequest, db: AsyncSession = Depends(get_db))
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token, is_onboarded=False)
 
-
 @router.post("/login")
 async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == data.email))
@@ -88,7 +83,6 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token, is_onboarded=user.is_onboarded)
 
-
 @router.post("/onboarding")
 async def onboarding(
     data: OnboardingRequest,
@@ -98,8 +92,6 @@ async def onboarding(
     if current_user.is_onboarded:
         raise HTTPException(status_code=400, detail="Онбординг уже пройден")
 
-    # Username из формы (новый фронт). Если пришёл — валидируем и проверяем
-    # уникальность; если нет — fallback к старой авто-генерации из email.
     if data.username:
         from app.services.username_util import validate_username, is_username_available
         new_username = data.username.strip().lower()
@@ -129,19 +121,16 @@ async def onboarding(
     current_user.is_onboarded = True
     await db.commit()
 
-    # Если username не передали (старый фронт) — авто-сгенерим из email
     await ensure_username(db, current_user)
 
     token = create_access_token({"sub": str(current_user.id)})
     return TokenResponse(access_token=token, is_onboarded=True)
-
 
 @router.get("/me")
 async def me(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Гарантируем username (для всех старых юзеров — генерация при первом запросе)
     username = await ensure_username(db, current_user)
     return {
         "id": str(current_user.id),

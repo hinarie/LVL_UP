@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
-   CONFIRM MODAL — универсальная модалка подтверждения
-   ═══════════════════════════════════════════════════════════════ */
+
 
 .confirm-overlay {
     position: fixed;
@@ -98,7 +96,6 @@
     transform: translateY(-1px);
 }
 
-/* Деструктивный вариант */
 .confirm-ok.confirm-danger {
     background: linear-gradient(135deg, var(--accent-red), #b91c1c);
 }

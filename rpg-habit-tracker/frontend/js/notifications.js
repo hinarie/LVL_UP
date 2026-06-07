@@ -1,13 +1,5 @@
-// ════════════════════════════════════════════════════════════════
-// УВЕДОМЛЕНИЯ — колокольчик в хедере, дропдаун со списком, пуллинг
-// ════════════════════════════════════════════════════════════════
-//
-// Хранит состояние, рендерит элементы, периодически дёргает бэк за
-// счётчиком непрочитанных. Сам не лезет в чужие модули — для перехода
-// на пост/профиль использует уже существующие функции (openUserProfile,
-// switchPage и т.п.) если они есть; иначе тихо игнорирует.
 
-const NOTIF_POLL_MS = 30_000; // как часто перепроверять unread-count
+const NOTIF_POLL_MS = 30_000;
 
 const notifState = {
     items: [],
@@ -17,11 +9,6 @@ const notifState = {
     pollTimer: null,
 };
 
-// ────────────────────────────────────────────────────────────────
-// Хелперы рендера для разных типов
-// ────────────────────────────────────────────────────────────────
-
-// Возвращает { html: 'основной текст', preview?: 'превью контента' }
 function notifContent(n) {
     const actorName = n.actor?.display_name
         || n.actor?.character_name
@@ -76,10 +63,9 @@ function notifContent(n) {
     }
 }
 
-// Маленькая аватарка актора (если есть) — иначе emoji-иконка типа
 function notifIconHtml(n, fallbackEmoji) {
     const url = n.actor?.avatar_url;
-    if (url && /^https?:\/\//.test(url)) {
+    if (url && /^https?:\/\
         return `<img src="${escapeAttrSafe(url)}" alt="">`;
     }
     if (url && url.length <= 4) {
@@ -109,16 +95,12 @@ function notifItemHtml(n) {
     `;
 }
 
-// ────────────────────────────────────────────────────────────────
-// API
-// ────────────────────────────────────────────────────────────────
-
 async function notifFetchUnreadCount() {
     try {
         const data = await api.request('GET', '/notifications/unread-count', null, true);
         notifSetUnreadCount(data.unread_count || 0);
     } catch (e) {
-        // тихо игнорим (например, юзер ещё не залогинен)
+
     }
 }
 
@@ -141,7 +123,7 @@ async function notifFetchList() {
 async function notifMarkRead(id) {
     try {
         await api.request('POST', `/notifications/${id}/read`, null, true);
-    } catch (e) { /* ignore */ }
+    } catch (e) {  }
 }
 
 async function notifMarkAll() {
@@ -159,7 +141,7 @@ async function notifDelete(id) {
     try {
         await api.request('DELETE', `/notifications/${id}`, null, true);
         notifState.items = notifState.items.filter(n => n.id !== id);
-        // Если удалили непрочитанное — скорректировать счётчик
+
         notifFetchUnreadCount();
         renderNotifList();
     } catch (e) {
@@ -187,10 +169,6 @@ async function notifClearAll() {
     }
 }
 
-// ────────────────────────────────────────────────────────────────
-// Рендер
-// ────────────────────────────────────────────────────────────────
-
 function notifSetUnreadCount(count) {
     notifState.unreadCount = count;
     const badge = document.getElementById('notif-badge');
@@ -216,10 +194,6 @@ function renderNotifList() {
     list.innerHTML = notifState.items.map(notifItemHtml).join('');
 }
 
-// ────────────────────────────────────────────────────────────────
-// Открыть/закрыть дропдаун
-// ────────────────────────────────────────────────────────────────
-
 function openNotifDropdown() {
     const dd = document.getElementById('notif-dropdown');
     const bd = document.getElementById('notif-backdrop');
@@ -229,7 +203,7 @@ function openNotifDropdown() {
         bd.style.display = 'block';
     }
     notifState.isOpen = true;
-    notifFetchList(); // всегда подгружаем свежий список при открытии
+    notifFetchList();
 }
 
 function closeNotifDropdown() {
@@ -245,12 +219,6 @@ function toggleNotifDropdown() {
     else openNotifDropdown();
 }
 
-// ────────────────────────────────────────────────────────────────
-// Клик по уведомлению — навигация к источнику
-// ────────────────────────────────────────────────────────────────
-
-// Универсальная навигация: используем существующую логику initNavigation()
-// в app.js, т.е. кликаем по соответствующей nav-кнопке.
 function notifGoToPage(page) {
     const btn = document.querySelector(`.nav-btn[data-page="${page}"], .mobile-nav-btn[data-page="${page}"]`);
     if (btn) btn.click();
@@ -262,7 +230,6 @@ async function handleNotifClick(item) {
     const entityId = item.dataset.entityId;
     const username = item.dataset.actorUsername;
 
-    // Локально отметим прочитанным, не ждём ответа сервера
     const n = notifState.items.find(x => x.id === id);
     if (n && !n.is_read) {
         n.is_read = true;
@@ -271,10 +238,9 @@ async function handleNotifClick(item) {
         notifMarkRead(id);
     }
 
-    // Куда перейти
     switch (type) {
         case 'friend_request':
-            // На ленту → вкладка «Друзья»
+
             notifGoToPage('feed');
             if (typeof switchFeedTab === 'function') switchFeedTab('friends');
             closeNotifDropdown();
@@ -282,7 +248,7 @@ async function handleNotifClick(item) {
 
         case 'friend_accepted':
         case 'ping_received':
-            // Открыть профиль того, кто инициировал
+
             if (username && typeof openUserProfile === 'function') {
                 openUserProfile(username);
                 closeNotifDropdown();
@@ -291,23 +257,19 @@ async function handleNotifClick(item) {
 
         case 'post_liked':
         case 'post_commented':
-            // Перейти на ленту — полноценный deep-link до поста потом
+
             notifGoToPage('feed');
             closeNotifDropdown();
             break;
 
         case 'level_up':
         case 'rank_up':
-            // На свой профиль
+
             notifGoToPage('profile');
             closeNotifDropdown();
             break;
     }
 }
-
-// ────────────────────────────────────────────────────────────────
-// Делегация кликов
-// ────────────────────────────────────────────────────────────────
 
 function setupNotifHandlers() {
     const bell = document.getElementById('notif-bell');
@@ -333,12 +295,10 @@ function setupNotifHandlers() {
         notifClearAll();
     });
 
-    // Esc — закрыть
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && notifState.isOpen) closeNotifDropdown();
     });
 
-    // Клик снаружи — закрыть (только на десктопе; на мобилке закрывает бэкдроп)
     document.addEventListener('click', (e) => {
         if (!notifState.isOpen) return;
         if (window.matchMedia('(max-width: 768px)').matches) return;
@@ -346,9 +306,8 @@ function setupNotifHandlers() {
         closeNotifDropdown();
     });
 
-    // Делегация по самому списку: клик по элементу, удаление, клик по имени → профиль
     dd?.addEventListener('click', (e) => {
-        // Сначала — удаление, чтобы не открывалась навигация
+
         const delBtn = e.target.closest('[data-act="notif-delete"]');
         if (delBtn) {
             e.stopPropagation();
@@ -356,7 +315,7 @@ function setupNotifHandlers() {
             if (item) notifDelete(item.dataset.notifId);
             return;
         }
-        // Клик по имени актора — открыть его профиль
+
         const userLink = e.target.closest('[data-act="open-user"]');
         if (userLink) {
             e.stopPropagation();
@@ -367,21 +326,17 @@ function setupNotifHandlers() {
             }
             return;
         }
-        // Клик по уведомлению — обычная навигация
+
         const item = e.target.closest('.notif-item');
         if (item) handleNotifClick(item);
     });
 }
 
-// ────────────────────────────────────────────────────────────────
-// Пуллинг
-// ────────────────────────────────────────────────────────────────
-
 function startNotifPolling() {
     stopNotifPolling();
-    notifFetchUnreadCount(); // первый сразу
+    notifFetchUnreadCount();
     notifState.pollTimer = setInterval(() => {
-        // Не дёргаем, если вкладка скрыта — экономим запросы
+
         if (document.hidden) return;
         notifFetchUnreadCount();
     }, NOTIF_POLL_MS);
@@ -394,14 +349,9 @@ function stopNotifPolling() {
     }
 }
 
-// При возврате в таб — сразу обновить счётчик
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) notifFetchUnreadCount();
 });
-
-// ────────────────────────────────────────────────────────────────
-// Public init — вызывается из app.js (loadApp) после логина
-// ────────────────────────────────────────────────────────────────
 
 function initNotifications() {
     setupNotifHandlers();

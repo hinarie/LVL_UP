@@ -35,5 +35,5 @@ const api = {
 };
 
 function getTimezoneOffset() {
-    return new Date().getTimezoneOffset(); // -300 для UTC+5
+    return new Date().getTimezoneOffset();
 }

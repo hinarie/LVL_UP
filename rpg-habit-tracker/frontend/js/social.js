@@ -2,10 +2,6 @@ let feedPosts = [];
 let friendRequests = [];
 let friends = [];
 
-// ════════════════════════════════════════════════════════════════
-// Утилиты
-// ════════════════════════════════════════════════════════════════
-
 function getCurrentUserId() {
     if (window.MY_USER_ID) return window.MY_USER_ID;
     try {
@@ -32,7 +28,6 @@ function escapeAttrSafe(text) {
         .replace(/>/g, '&gt;');
 }
 
-// Относительное время в стиле соцсетей: «только что», «5 мин», «3 ч», «2 д», дата
 function relTime(iso) {
     if (!iso) return '';
     const str = (typeof iso === 'string' && !iso.endsWith('Z') && !iso.includes('+')) ? iso + 'Z' : iso;
@@ -54,10 +49,6 @@ function avatarFor(level) {
     return RANK_AVATARS[Math.max(0, idx)];
 }
 
-// Возвращает HTML-содержимое аватара по avatar_url из профиля автора:
-// • http(s)-ссылка → <img>
-// • короткая строка (emoji) → сам emoji
-// • иначе → fallback emoji по уровню (avatarFor)
 function avatarContent(avatarUrl, level) {
     if (avatarUrl && /^https?:\/\//.test(avatarUrl)) {
         return `<img src="${escapeAttrSafe(avatarUrl)}" alt="" class="avatar-img">`;
@@ -68,20 +59,15 @@ function avatarContent(avatarUrl, level) {
     return avatarFor(level);
 }
 
-// Достаём название ивента из auto_event_data (JSON), если есть
 function challengeTitleOf(post) {
     if (post.auto_event_data) {
         try {
             const d = JSON.parse(post.auto_event_data);
             if (d && d.challenge_title) return d.challenge_title;
-        } catch { /* ignore */ }
+        } catch {}
     }
     return null;
 }
-
-// ════════════════════════════════════════════════════════════════
-// ЛЕНТА
-// ════════════════════════════════════════════════════════════════
 
 async function loadFeed() {
     try {
@@ -113,11 +99,8 @@ function makePostCard(post) {
     const authorLevel = post.author?.level || 1;
     const authorRank  = post.author?.rank || 'Warrior';
     const isOwn = String(post.author_id) === String(getCurrentUserId());
-    // Аватар берём из профиля автора (avatar_url): либо картинка по ссылке,
-    // либо emoji. Если ничего не задано — fallback на emoji по уровню.
     const avatar = avatarContent(post.author?.avatar_url, authorLevel);
 
-    // Бейджи: авто-событие (level up / победа) или происхождение из ивента
     const chTitle = challengeTitleOf(post);
     let badge = '';
     if (post.is_auto_generated) {
@@ -134,7 +117,6 @@ function makePostCard(post) {
         ? `<button class="post-menu" title="Удалить" data-act="delete-post" data-post-id="${post.id}">🗑</button>`
         : '';
 
-    // Имя автора кликабельно — ведёт в профиль (если есть username)
     const authorUsername = post.author?.username || '';
     const nameHtml = authorUsername
         ? `<span class="post-name post-link" data-act="open-user" data-username="${escapeAttrSafe(authorUsername)}">${escapeHtml(authorName)}</span>`
@@ -146,7 +128,7 @@ function makePostCard(post) {
         ? `<div class="post-avatar post-link" data-act="open-user" data-username="${escapeAttrSafe(authorUsername)}">${avatar}</div>`
         : `<div class="post-avatar">${avatar}</div>`;
 
-    const myR = post.my_reaction; // 'like' | 'dislike' | null
+    const myR = post.my_reaction;
     card.innerHTML = `
         ${avatarHtml}
         <div class="post-main">
@@ -190,7 +172,6 @@ function makePostCard(post) {
     return card;
 }
 
-// ── Реакции: лайк / дизлайк (взаимоисключающие, оптимистично) ──
 async function reactPost(postId, type, btn) {
     const card = document.getElementById(`post-${postId}`);
     if (!card) return;
@@ -199,13 +180,11 @@ async function reactPost(postId, type, btn) {
     const likeNum = likeBtn.querySelector('.post-act-num');
     const disNum  = disBtn.querySelector('.post-act-num');
 
-    // текущее состояние
     const wasLike = likeBtn.classList.contains('liked');
     const wasDislike = disBtn.classList.contains('disliked');
     let likes = parseInt(likeNum.textContent || '0', 10) || 0;
     let dislikes = parseInt(disNum.textContent || '0', 10) || 0;
 
-    // вычисляем новое состояние оптимистично
     let nextLike = wasLike, nextDislike = wasDislike;
     if (type === 'like') {
         if (wasLike) { nextLike = false; likes--; }
@@ -219,13 +198,11 @@ async function reactPost(postId, type, btn) {
 
     try {
         const res = await api.request('POST', `/social/posts/${postId}/react`, { type }, true);
-        // синхронизируем с сервером
         applyReactionUI(likeBtn, disBtn, res.my_reaction === 'like', res.my_reaction === 'dislike',
             res.likes, res.dislikes);
         const p = feedPosts.find(x => String(x.id) === String(postId));
         if (p) { p.my_reaction = res.my_reaction; p.likes = res.likes; p.dislikes = res.dislikes; }
     } catch (e) {
-        // откат
         applyReactionUI(likeBtn, disBtn, wasLike, wasDislike,
             parseInt(likeNum.textContent,10)||0, parseInt(disNum.textContent,10)||0);
         showToast(e.message, true);
@@ -241,12 +218,6 @@ function applyReactionUI(likeBtn, disBtn, liked, disliked, likes, dislikes) {
     disBtn.querySelector('.post-act-num').textContent = dislikes;
 }
 
-// ── Комментарии ──────────────────────────────────────────────
-// ВАЖНО: страницы Лента и Профиль рендерятся одновременно и используют
-// одну функцию makePostCard → в DOM могут существовать ДУБЛИКАТЫ
-// id="post-comments-XXX". Поэтому ищем элементы scoped — внутри той
-// карточки поста, на кнопку которой реально кликнули.
-
 function postCardOf(el) {
     return el?.closest?.('.post') || null;
 }
@@ -261,7 +232,6 @@ async function toggleComments(postId, btn) {
         return;
     }
 
-    // Переключаем класс — CSS делает остальное (никаких inline-стилей)
     const opening = !box.classList.contains('open');
     box.classList.toggle('open', opening);
 
@@ -270,9 +240,7 @@ async function toggleComments(postId, btn) {
         const input = card
             ? card.querySelector('.post-comment-input')
             : box.querySelector('.post-comment-input');
-        // Скроллим к открытому блоку, чтобы пользователь увидел его
         box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        // Фокус с задержкой, чтобы не конфликтовать со скроллом
         setTimeout(() => input?.focus(), 100);
     }
 }
@@ -331,7 +299,6 @@ function makeCommentEl(postId, c) {
 }
 
 async function sendComment(postId, sourceEl = null) {
-    // Находим карточку поста, в которой реально кликнули/набрали Enter
     const card = sourceEl ? postCardOf(sourceEl) : null;
     const input = (card && card.querySelector('.post-comment-input'))
         || document.getElementById(`post-comment-input-${postId}`);
@@ -347,7 +314,6 @@ async function sendComment(postId, sourceEl = null) {
         if (empty) list.innerHTML = '';
         list.appendChild(makeCommentEl(postId, res));
         input.value = '';
-        // обновляем счётчик в этой же карточке
         bumpCommentCount(postId, +1, card);
     } catch (e) { showToast(e.message, true); }
     finally { input.disabled = false; input.focus(); }
@@ -377,7 +343,6 @@ async function deleteFeedComment(postId, commentId, sourceEl = null) {
 }
 
 function bumpCommentCount(postId, delta, card = null) {
-    // Обновляем счётчик во ВСЕХ карточках с этим post id (лента + профиль)
     document.querySelectorAll(`.post-cc-${postId}`).forEach(el => {
         el.textContent = Math.max(0, (parseInt(el.textContent, 10) || 0) + delta);
     });
@@ -401,10 +366,6 @@ async function deletePost(postId) {
         showToast('Пост удалён');
     } catch (e) { showToast(e.message, true); }
 }
-
-// ════════════════════════════════════════════════════════════════
-// КОМПОЗЕР
-// ════════════════════════════════════════════════════════════════
 
 function initComposer() {
     const input   = document.getElementById('post-content');
@@ -430,7 +391,6 @@ function initComposer() {
         if (input.value.length > 0) expand();
     });
 
-    // Клик вне композера — свернуть, если пусто
     document.addEventListener('click', (e) => {
         if (!composer.contains(e.target) && e.target.id !== 'feed-fab' && !input.value.trim()) {
             composer.classList.remove('expanded');
@@ -440,7 +400,6 @@ function initComposer() {
 
     document.getElementById('submit-post')?.addEventListener('click', submitFeedPost);
 
-    // FAB — скролл наверх, фокус в композер
     document.getElementById('feed-fab')?.addEventListener('click', () => {
         switchFeedTab('feed');
         composer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -464,7 +423,6 @@ async function submitFeedPost() {
         document.getElementById('composer-count').textContent = '0/500';
         document.getElementById('composer').classList.remove('expanded');
         showToast('Пост опубликован! 🎉');
-        // Вставляем новый пост сверху без полной перезагрузки
         if (newPost && newPost.id) {
             feedPosts.unshift(newPost);
             const list = document.getElementById('posts-list');
@@ -483,9 +441,6 @@ async function submitFeedPost() {
     }
 }
 
-// ════════════════════════════════════════════════════════════════
-// ТАБЫ Лента / Друзья
-// ════════════════════════════════════════════════════════════════
 
 function switchFeedTab(tab) {
     document.querySelectorAll('.feed-tab').forEach(b =>
@@ -508,13 +463,8 @@ document.getElementById('refresh-feed')?.addEventListener('click', async () => {
     showToast('Лента обновлена');
 });
 
-// Инициализация после загрузки партиалов
 initComposer();
 initFeedTabs();
-
-// ════════════════════════════════════════════════════════════════
-// ДРУЗЬЯ
-// ════════════════════════════════════════════════════════════════
 
 async function loadFriendRequests() {
     try {
@@ -525,7 +475,6 @@ async function loadFriendRequests() {
 
 function renderFriendRequests() {
     const badge = document.getElementById('friends-tab-badge');
-    // Десктоп — правый рейл; мобилка — карточка во вкладке Друзья
     const targets = [
         { card: document.getElementById('friend-requests-card'),   list: document.getElementById('friend-requests-list') },
         { card: document.getElementById('friend-requests-card-m'), list: document.getElementById('friend-requests-list-m') },
@@ -638,28 +587,12 @@ document.getElementById('send-friend-request-m')?.addEventListener('click',
     () => submitFriendRequest('friend-email-m', 'friend-error-m'));
 
 
-// ════════════════════════════════════════════════════════════════
-// ДЕЛЕГАЦИЯ СОБЫТИЙ
-// Все клики/keydown по постам и комментариям ловим на document-уровне
-// через data-act атрибуты. Это надёжнее, чем onclick="" в шаблонах,
-// и работает для всех постов сразу (Лента, Профиль, чужой профиль).
-// ════════════════════════════════════════════════════════════════
-
-// Делегация навешивается на capture-фазе (третий аргумент `true`), чтобы
-// клики по элементам ленты обрабатывались раньше любых других обработчиков
-// на document (например, делегации ивентов в challenges.js, которая могла
-// перехватывать/глушить клик до того, как он доходил сюда).
-// Дополнительно требуем, чтобы цель находилась внутри карточки поста ленты
-// (.post) — так мы не вмешиваемся в посты ивентов с другой разметкой.
 document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-act]');
     if (!target) return;
 
     const act = target.dataset.act;
 
-    // open-user должен работать везде, где есть аватарка/имя пользователя:
-    // в постах ленты, в комментариях, в списке друзей, в карточках профиля
-    // и т.д. Поэтому обрабатываем его до общего фильтра по .post.
     if (act === 'open-user') {
         e.preventDefault();
         e.stopPropagation();
@@ -668,9 +601,6 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // Остальные действия (лайки, комментарии, удаление поста и т.п.) —
-    // только для карточек постов ленты/профиля, чтобы не пересекаться
-    // с делегацией ивентов в challenges.js.
     if (!target.closest('.post')) return;
 
     const postId = target.dataset.postId;
@@ -717,8 +647,3 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     sendComment(target.dataset.postId, target);
 }, true);
-
-// ════════════════════════════════════════════════════════════════
-// ПРОФИЛЬ — логика вынесена в profile.js. makePostCard, avatarFor,
-// escapeHtml, relTime остаются глобальными и используются оттуда.
-// ════════════════════════════════════════════════════════════════
